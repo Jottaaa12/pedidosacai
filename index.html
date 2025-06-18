@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido de Açaí - Sabor da Terra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Biblioteca para gerar QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4A00E0; --secondary-color: #8E2DE2; --background-color: #f4f4f9;
+            --widget-background: #ffffff; --text-color: #333; --border-color: #ddd;
+            --disabled-color: #ccc; --warning-bg: #fffbe6; --warning-border: #facc15; --warning-text: #b45309;
+        }
+        body {
+            font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color);
+            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
+        }
+        #widget-container {
+            max-width: 500px; width: 100%; background-color: var(--widget-background);
+            border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative;
+        }
+        #toast-notification {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(200%);
+            background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 20px;
+            font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            opacity: 0; transition: all 0.4s ease-in-out; z-index: 1001;
+        }
+        #toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #cart-indicator {
+            position: absolute; top: 15px; right: 20px;
+            background-color: var(--primary-color); color: white;
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transform: scale(0); transition: transform 0.3s ease;
+        }
+        #cart-indicator.show { transform: scale(1); }
+        #progress-bar-container { width: 100%; background-color: var(--border-color); }
+        #progress-bar { height: 8px; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.5s ease-in-out; }
+        #form-content { padding: 25px 30px; }
+        .step { display: none; animation: fadeIn 0.5s; }
+        .step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .main-header { text-align: center; margin-bottom: 25px; }
+        .main-header img.logo {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+        .main-header h2 { margin: 0 0 5px 0; color: var(--primary-color); font-weight: 700;}
+        .main-header p { margin: 0; }
+        .main-header a { color: var(--secondary-color); text-decoration: none; font-weight: 500; }
+        .main-header a:hover { text-decoration: underline; }
+
+        .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
+        .step-header h2 { text-align: left; color: var(--primary-color); font-weight: 600; margin: 0; flex-grow: 1; }
+        #topping-info { width: 100%; text-align: center; font-size: 0.9rem; font-weight: 500; color: var(--secondary-color); margin-bottom: 15px; }
+        .action-btn { font-size: 0.8rem; background: none; border: 1px solid var(--secondary-color); color: var(--secondary-color); cursor: pointer; padding: 5px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; transition: background-color 0.2s; }
+        .action-btn:hover { background-color: #e9dffc; }
+        .disclaimer-note { font-size: 0.8rem; color: #666; text-align: center; margin-top: 15px; background-color: #f9f9f9; padding: 8px; border-radius: 6px; }
+        #time-sensitive-warning { background-color: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); margin-bottom: 15px; line-height: 1.5; }
+        #time-sensitive-warning strong { color: var(--warning-text); font-weight: 600; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
+        .checkbox-group, .radio-group { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+        input[type="text"], input[type="tel"], input[type="number"], select, textarea, input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Poppins', sans-serif; box-sizing: border-box; transition: border-color 0.3s, box-shadow 0.3s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 0, 224, 0.2); }
+        textarea { resize: vertical; min-height: 80px; }
+        .choice-item { display: flex; align-items: center; background-color: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; }
+        .choice-item:hover { border-color: var(--secondary-color); }
+        .choice-item input { margin-right: 12px; accent-color: var(--primary-color); width: 1.2em; height: 1.2em; }
+        .choice-item.checked { background-color: #e9dffc; border-color: var(--primary-color); font-weight: 500; }
+        .button-group { display: flex; justify-content: space-between; margin-top: 30px; }
+        button, #send-whatsapp, .pix-btn { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); color: var(--widget-background); border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        #send-whatsapp:hover, button:hover:not(:disabled), .pix-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+        button:disabled { background: var(--disabled-color); cursor: not-allowed; box-shadow: none; transform: none; }
+        .back-btn { background: none; color: var(--text-color); box-shadow: none; border: 1px solid var(--border-color); }
+        .back-btn:hover { background-color: #f0f0f0; }
+        #summary-container, .payment-details { background-color: #f9f4ff; border: 1px solid var(--secondary-color); border-radius: 8px; padding: 20px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-size: 0.95rem; }
+        .payment-details p { margin: 5px 0; }
+        .pix-btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .pix-btn { flex: 1; font-size: 0.9rem; padding: 10px; }
+        .hidden { display: none !important; }
+        .footer-credits { text-align: center; padding: 15px; background-color: #f8f9fa; font-size: 0.8rem; color: #6c757d; border-top: 1px solid var(--border-color); }
+        .footer-credits a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
+        .footer-credits a:hover { text-decoration: underline; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.show { opacity: 1; pointer-events: all; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 90%; width: 320px; transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.show .modal-content { transform: scale(1); }
+        #qrcode-container { margin: 20px auto; width: 256px; height: 256px; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
+        #qrcode-container img { width: 100% !important; height: 100% !important; }
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); }
+        .modal-content p { color: var(--text-color); font-weight: 500; }
+        #cart-modal-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        #order-history-list { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
+        #order-history-list li { background: #fafafa; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        #order-history-list .reorder-btn { font-size: 0.8rem; padding: 6px 12px; }
+
+        @media (max-width: 480px) {
+            body { padding: 0; align-items: flex-start; }
+            #widget-container { width: 100%; margin: 0; border-radius: 0; box-shadow: none; min-height: 100vh; }
+            #form-content { padding: 20px 15px; }
+            input, select, button, .pix-btn { padding: 14px; font-size: 1rem; }
+            .checkbox-group, .radio-group { grid-template-columns: 1fr; }
+            .choice-item { white-space: nowrap; }
+            #summary-container { width: 100%; box-sizing: border-box; }
+        }
+        @media (min-width: 481px) and (max-width: 1024px) {
+            #widget-container { max-width: 720px; margin: 20px auto; }
+            #step-8.active { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 20px; align-items: end; }
+            #step-8 .step-header, #step-8 #time-sensitive-warning, #step-8 .disclaimer-note, #step-8 .button-group { grid-column: 1 / -1; }
+            #step-8 .form-group:has(#delivery-location) { grid-column: 1 / 2; grid-row: 2; }
+            #step-8 #time-picker-group, #step-8 #date-picker-group { grid-column: 2 / 3; grid-row: 2; }
+            #step-8 #room-number-group { grid-column: 1 / -1; grid-row: 3; }
+        }
+        @media (min-width: 1025px) {
+            #widget-container { max-width: 960px; margin: 20px auto; }
+            #step-7.active { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2%; }
+            #step-7 .step-header, #step-7 .button-group { width: 100%; }
+            #step-7 .form-group { flex-basis: 48%; }
+            #summary-container { width: 60%; margin: 0 auto; }
+        }
+    </style>
+</head>
+<body>
+    <div id="widget-container">
+        <div id="toast-notification"></div>
+        <div id="cart-indicator" class="hidden">0</div>
+        <div id="progress-bar-container"><div id="progress-bar"></div></div>
+        <div id="form-content">
+            <!-- Etapas -->
+            <div id="step-1" class="step active"><div class="main-header"><img src="https://i.imgur.com/9VzcNVM.png" alt="Logo Açaí Sabor da Terra" class="logo"><h2>Açaí Sabor da Terra</h2><p><a href="https://instagram.com/acaisabordaterra_" target="_blank" rel="noopener noreferrer">@acaisabordaterra_</a></p></div><div class="form-group"><label for="phone-login">Seu Telefone (com DDD)</label><input type="tel" id="phone-login" placeholder="Para salvar seus pedidos"></div><div id="name-group" class="form-group hidden"><label for="fullName">Seu Nome</label><input type="text" id="fullName"></div><div class="button-group"><button id="btn-login" disabled>Entrar / Cadastrar</button></div></div>
+            <div id="step-2" class="step"><div class="step-header"><h2>Bem-vindo(a), <span id="welcome-name"></span>!</h2></div><div class="button-group" style="flex-direction:column; gap: 15px;"><button id="btn-new-order">Novo Pedido</button><button id="btn-order-history" class="back-btn">Meus Pedidos Anteriores</button></div></div>
+            <div id="step-3" class="step"><div class="step-header"><h2>📦 Escolha o tamanho</h2></div><div id="size-group" class="radio-group"><label class="choice-item"><input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 300g – R$ 15,00</label><label class="choice-item"><input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 360g – R$ 18,00</label><label class="choice-item"><input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 400g – R$ 20,00</label><label class="choice-item"><input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 440g – R$ 22,00</label><label class="choice-item"><input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 500g – R$ 25,00</label><label class="choice-item"><input type="radio" name="size" value="custom"> Outro valor</label></div><div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;"><label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label><input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30"><p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step3" class="next-btn" disabled>Próximo</button></div></div>
+            <div id="step-4" class="step"><div class="step-header"><h2>🍦 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="creams-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="creme" value="Creme de maracujá"> Creme de maracujá</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de morango"> Creme de morango</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de ninho"> Creme de ninho</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de cupuaçu"> Creme de cupuaçu</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
+            <div id="step-5" class="step"><div class="step-header"><h2>🥣 Acompanhamentos</h2><button class="action-btn surprise-btn">✨ Surpreenda-me!</button><button class="action-btn clear-btn">Limpar</button></div><div id="topping-info">Você tem 4 acompanhamentos grátis.</div><div id="toppings-group" class="checkbox-group"><label class="choice-item"><input type="checkbox" name="topping" value="Leite em pó"> Leite em pó</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha Caramelizada"> Castanha Caramelizada</label><label class="choice-item"><input type="checkbox" name="topping" value="Granola"> Granola</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha"> Castanha</label><label class="choice-item"><input type="checkbox" name="topping" value="Gotas de Chocolate"> Gotas de Chocolate</label><label class="choice-item"><input type="checkbox" name="topping" value="Paçoquita"> Paçoquita</label><label class="choice-item"><input type="checkbox" name="topping" value="Amendoim"> Amendoim</label><label class="choice-item"><input type="checkbox" name="topping" value="Chocoball"> Chocoball</label><label class="choice-item"><input type="checkbox" name="topping" value="Canudinho Biju"> Canudinho Biju</label><label class="choice-item"><input type="checkbox" name="topping" value="Cereja"> Cereja</label><label class="choice-item"><input type="checkbox" name="topping" value="Sucrilhos"> Sucrilhos</label><label class="choice-item"><input type="checkbox" name="topping" value="M&M"> M&M</label><label class="choice-item"><input type="checkbox" name="topping" value="Ovomaltine"> Ovomaltine</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Branco"> Cookies Branco</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Preto"> Cookies Preto</label><label class="choice-item"><input type="checkbox" name="topping" value="Farinha de tapioca"> Farinha de tapioca</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
+            <div id="step-6" class="step"><div class="step-header"><h2>🍓 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="fruits-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="fruit" value="Morango"> Morango</label><label class="choice-item"><input type="checkbox" name="fruit" value="Kiwi"> Kiwi</label><label class="choice-item"><input type="checkbox" name="fruit" value="Uva"> Uva</label></div><p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
+            <div id="step-7" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button class="back-btn">Voltar</button><button id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
+            <div id="step-8" class="step"><div class="step-header"><h2>📍 Local e Horário</h2></div><div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div><div class="form-group"><label for="delivery-location">Local de entrega</label><select id="delivery-location"><option value="" disabled selected>Selecione</option><option value="Bloco A">Bloco A</option><option value="Bloco B">Bloco B</option><option value="Bloco C">Bloco C</option><option value="Bloco D">Bloco D</option><option value="Onibus BITU">Onibus BITU</option><option value="Cantina da Nassau">Cantina da Nassau</option><option value="Restaurante Dunas">Restaurante Dunas</option></select><p id="bitu-bus-note" class="disclaimer-note hidden">Atenção, essa escolha é exclusivo para o onibus de bitupita.</p></div><div id="room-number-group" class="form-group hidden"><label for="room-number">Número da sala</label><input type="text" id="room-number"></div><div id="time-picker-group" class="form-group"><label for="delivery-time">Horário de entrega (hoje)</label><select id="delivery-time"><option value="" disabled selected>Selecione</option><option value="18h00">18h00</option><option value="19h00">19h00</option><option value="20h00">20h00</option><option value="21h00">21h00</option></select></div><div id="date-picker-group" class="form-group hidden"><label for="delivery-date">Escolha a data da entrega</label><input type="date" id="delivery-date"></div><p class="disclaimer-note">A data/horário é flexível e está sujeita a confirmação via WhatsApp.</p><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step8" class="next-btn" disabled>Próximo</button></div></div>
+            <div id="step-9" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step9" class="next-btn" disabled>Ver Resumo</button></div></div>
+            <div id="step-10" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group"><button class="back-btn">Corrigir</button><a id="send-whatsapp" href="#" target="_blank">Enviar via WhatsApp</a></div></div>
+            <div id="step-11" class="step"><div class="step-header"><h2>📖 Meus Pedidos</h2></div><ul id="order-history-list"></ul><div class="button-group"><button class="back-btn">Voltar</button></div></div>
+        </div>
+        <div class="footer-credits">Gerenciamento de pedidos, feito por <a href="https://instagram.com/jottaaa0" target="_blank" rel="noopener noreferrer">@jottaaa0</a></div>
+    </div>
+    
+    <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button id="modal-pix-close">Fechar</button></div></div>
+    <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button id="add-another-btn">Montar Outro Copo</button><button id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
+    <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button id="modal-finalize-close">Entendi!</button></div></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyAh4RSV0gQ1KL9-Pmu-AJ9PE5s8mLIvthw",
+          authDomain: "acai-sabor-da-terra.firebaseapp.com",
+          projectId: "acai-sabor-da-terra",
+          storageBucket: "acai-sabor-da-terra.appspot.com",
+          messagingSenderId: "251748448639",
+          appId: "1:251748448639:web:af23fa70969dfdadb6024a"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let currentStep = 1;
+        const order = { cart: [] };
+        let currentAcai = {};
+        const whatsAppNumber = '5588981905006';
+        let toastTimeout;
+        const qrCodeInstance = new QRCode(document.getElementById("qrcode-container"), { width: 256, height: 256 });
+        let fruitToastShown = false;
+
+        const showToast = (message) => { /* ... */ };
+        const handleDeliveryStepLogic = () => { /* ... */ };
+
+        const showStep = (stepNumber) => {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            const stepEl = document.getElementById(`step-${stepNumber}`);
+            if (stepEl) {
+                stepEl.classList.add('active');
+                document.getElementById('widget-container').scrollIntoView({ behavior: 'smooth' });
+            }
+            const totalProgressSteps = 10;
+            document.getElementById('progress-bar').style.width = `${((stepNumber - 1) / (totalProgressSteps - 1)) * 100}%`;
+            if (stepNumber === 8) handleDeliveryStepLogic();
+            if (stepNumber === 10) document.getElementById('modal-finalize').classList.add('show');
+        };
+        
+        const getCheckedValues = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+        
+        const crc16 = (payload) => { /* ... */ };
+        const generateBrCode = () => { /* ... */ };
+        const saveCurrentAcaiData = () => { /* ... */ };
+        const saveFinalOrderData = () => { /* ... */ };
+        const generateSummary = () => { /* ... */ };
+        
+        const validateStep = {
+            1: () => document.getElementById('btn-login').disabled = !(document.getElementById('phone-login').value.length > 9),
+            3: () => { const sel = document.querySelector('input[name="size"]:checked'); const c = document.getElementById('custom-value-input'); const v = parseFloat(c.value); document.getElementById('custom-value-group').classList.toggle('hidden', !sel || sel.value !== 'custom'); document.getElementById('btn-step3').disabled = !sel || (sel.value === 'custom' && (isNaN(v) || v < 26 || v > 50)); },
+            7: () => {},
+            8: () => { const locOk = document.getElementById('delivery-location').value; const needsRoom = ['Bloco A', 'Bloco B', 'Bloco C', 'Bloco D'].includes(locOk); document.getElementById('room-number-group').classList.toggle('hidden', !needsRoom); const roomOk = !needsRoom || (needsRoom && document.getElementById('room-number').value); const isDateVisible = !document.getElementById('date-picker-group').classList.contains('hidden'); const scheduleOk = isDateVisible ? document.getElementById('delivery-date').value : document.getElementById('delivery-time').value; document.getElementById('btn-step8').disabled = !(locOk && roomOk && scheduleOk); },
+            9: () => document.getElementById('btn-step9').disabled = !document.getElementById('payment-method').value
+        };
+        
+        const resetCupBuilder = () => { /* ... */ };
+        const updateCartIndicator = () => { /* ... */ };
+        
+        const setupEventListeners = () => {
+            document.querySelectorAll('.next-btn').forEach(btn => btn.addEventListener('click', () => { currentStep++; showStep(currentStep); }));
+            document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', () => {
+                if (currentStep === 11) { currentStep = 2; showStep(currentStep); }
+                else if (currentStep === 3) { currentStep = 2; showStep(currentStep); }
+                else if(currentStep > 1) { currentStep--; showStep(currentStep); }
+            }));
+            
+            document.getElementById('btn-login').addEventListener('click', async () => { /* ... */ });
+            document.getElementById('btn-new-order').addEventListener('click', () => { /* ... */ });
+            document.getElementById('btn-order-history').addEventListener('click', async () => { /* ... */ });
+            document.getElementById('add-to-cart-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('add-another-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('finish-order-btn').addEventListener('click', () => { currentStep = 8; showStep(currentStep); });
+            document.getElementById('btn-step9').addEventListener('click', () => { generateSummary(); nextStep(); });
+            document.getElementById('send-whatsapp').addEventListener('click', async () => { /* ... */ });
+            document.getElementById('form-content').addEventListener('input', e => { /* ... */ });
+            ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date'].forEach(id => { /* ... */ });
+            document.querySelectorAll('.checkbox-group').forEach(g => { /* ... */ });
+            toppingsGroup.addEventListener('change', () => { /* ... */ });
+            document.querySelectorAll('.clear-btn, .surprise-btn').forEach(btn => { /* ... */ });
+            document.getElementById('payment-method').addEventListener('change', e => { /* ... */ });
+            document.getElementById('delivery-location').addEventListener('change', (e) => { /* ... */ });
+            const modalPix = document.getElementById('modal-pix');
+            document.getElementById('generate-qr-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('copy-br-code-btn').addEventListener('click', () => { /* ... */ });
+            document.getElementById('modal-pix-close').addEventListener('click', () => modalPix.classList.remove('show'));
+            modalPix.addEventListener('click', (e) => { if (e.target === modalPix) modalPix.classList.remove('show'); });
+            const modalFinalize = document.getElementById('modal-finalize');
+            document.getElementById('modal-finalize-close').addEventListener('click', () => modalFinalize.classList.remove('show'));
+            modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
+        };
+        
+        setupEventListeners();
+        showStep(currentStep);
+    });
+    </script>
+</body>
+</html>
