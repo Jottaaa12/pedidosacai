@@ -781,11 +781,57 @@
         const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
         toppingsGroup.addEventListener('change', () => { const free = 4, count = toppingsGroup.querySelectorAll('input:checked').length, extra = Math.max(0, count - free); toppingInfo.textContent = extra > 0 ? `Adicionais: ${extra} (R$ ${extra.toFixed(2)})` : `Você tem ${Math.max(0, free-count)} acompanhamento(s) grátis.`; if (count === free) showToast('Combo Incrível! 🏆'); });
         document.querySelectorAll('.clear-btn, .surprise-btn').forEach(btn => btn.addEventListener('click', e => { const g = e.target.closest('.step').querySelector('.checkbox-group'), cbs = Array.from(g.querySelectorAll('input[type=checkbox]')); cbs.forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('checked'); }); if (e.target.classList.contains('surprise-btn')) { const max = g.id === 'toppings-group' ? 4 : parseInt(g.dataset.max, 10); const shuffled = cbs.sort(() => 0.5 - Math.random()); shuffled.slice(0, max).forEach(cb => { cb.checked = true; cb.parentElement.classList.add('checked'); }); } if (g.id === 'toppings-group') toppingsGroup.dispatchEvent(new Event('change')); }));
+        
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('Código Pix copiado!');
+                } else {
+                    showToast('Falha ao copiar a chave.');
+                }
+            } catch (err) {
+                console.error('Falha ao copiar com o método antigo: ', err);
+                showToast('Falha ao copiar a chave.');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        document.getElementById('generate-qr-btn').addEventListener('click', () => { 
+            saveFinalOrderData();
+            const brCode = generateBrCode();
+            qrCodeInstance.clear(); 
+            qrCodeInstance.makeCode(brCode); 
+            document.getElementById('modal-pix-value').textContent = `R$ ${order.payment.baseTotal.toFixed(2)}`; 
+            document.getElementById('modal-pix').classList.add('show'); 
+        });
+
+        document.getElementById('copy-br-code-btn').addEventListener('click', () => { 
+            saveFinalOrderData();
+            const brCode = generateBrCode();
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(brCode).then(() => showToast('Código Pix copiado!'))
+                .catch(err => {
+                    console.error('Falha ao copiar com a API moderna: ', err);
+                    fallbackCopyTextToClipboard(brCode);
+                });
+            } else {
+                fallbackCopyTextToClipboard(brCode);
+            }
+        });
+
         const modalPix = document.getElementById('modal-pix');
-        document.getElementById('generate-qr-btn').addEventListener('click', () => { generateSummary(); qrCodeInstance.clear(); qrCodeInstance.makeCode(generateBrCode()); document.getElementById('modal-pix-value').textContent = `R$ ${order.payment.baseTotal.toFixed(2)}`; modalPix.classList.add('show'); });
-        document.getElementById('copy-br-code-btn').addEventListener('click', () => { generateSummary(); const brCode = generateBrCode(); const ta = document.createElement('textarea'); ta.value = brCode; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('Chave Copia e Cola copiada!'); });
-        document.getElementById('modal-pix-close').addEventListener('click', () => modalPix.classList.remove('show'));
         modalPix.addEventListener('click', (e) => { if (e.target === modalPix) modalPix.classList.remove('show'); });
+        document.getElementById('modal-pix-close').addEventListener('click', () => modalPix.classList.remove('show'));
+        
         const modalFinalize = document.getElementById('modal-finalize');
         document.getElementById('modal-finalize-close').addEventListener('click', () => modalFinalize.classList.remove('show'));
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
