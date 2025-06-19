@@ -135,8 +135,12 @@
                         <label for="phone">Telefone (com DDD)</label>
                         <input type="tel" id="phone" placeholder="Ex: 88912345678">
                     </div>
+                    
+                    <!-- Elemento reCAPTCHA visível -->
+                    <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+
                     <div class="button-group" style="justify-content: center;">
-                        <button id="send-code-btn">Enviar SMS de Verificação</button>
+                        <button id="send-code-btn" disabled>Enviar SMS de Verificação</button>
                     </div>
                     
                     <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
@@ -186,8 +190,6 @@
     <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button id="modal-pix-close">Fechar</button></div></div>
     <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button id="add-another-btn">Montar Outro Copo</button><button id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
     <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button id="modal-finalize-close">Entendi!</button></div></div>
-    <!-- Elemento invisível para o reCAPTCHA, agora não é mais necessário-->
-    <!-- <div id="recaptcha-container"></div> -->
 
     <!-- Script de Configuração do Firebase -->
     <script>
@@ -244,17 +246,25 @@
             }
         });
         
-        // Envia o código SMS para o telefone
-        document.getElementById('send-code-btn').addEventListener('click', () => {
-            // CORREÇÃO: Cria um novo verificador a cada clique para garantir que não expire
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('send-code-btn', {
-                'size': 'invisible',
+        // CORREÇÃO: Função para renderizar o reCAPTCHA VISÍVEL
+        function renderRecaptcha() {
+            const sendCodeBtn = document.getElementById('send-code-btn');
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                'size': 'normal', // Tornando o reCAPTCHA visível
                 'callback': (response) => {
-                    // Este callback é chamado quando o reCAPTCHA é resolvido.
-                    // O envio do SMS já acontece depois de signInWithPhoneNumber.
+                    // reCAPTCHA resolvido, habilita o botão de enviar SMS
+                    sendCodeBtn.disabled = false;
+                },
+                'expired-callback': () => {
+                    // reCAPTCHA expirou, desabilita o botão
+                    sendCodeBtn.disabled = true;
                 }
             });
-            
+            window.recaptchaVerifier.render();
+        }
+
+        // Envia o código SMS para o telefone
+        document.getElementById('send-code-btn').addEventListener('click', () => {
             const phoneInput = document.getElementById('phone');
             let phoneNumber = phoneInput.value.replace(/\D/g, ''); 
             
@@ -266,9 +276,9 @@
             if (!phoneNumber.startsWith('55')) {
                 phoneNumber = '55' + phoneNumber;
             }
+            // Usa o verificador que já está visível na tela
             const appVerifier = window.recaptchaVerifier;
 
-            // O método `render` é chamado implicitamente por `signInWithPhoneNumber`
             auth.signInWithPhoneNumber(`+${phoneNumber}`, appVerifier)
                 .then((confirmationResult) => {
                     window.confirmationResult = confirmationResult;
@@ -276,11 +286,10 @@
                     document.getElementById('code-verification-group').classList.remove('hidden');
                 }).catch((error) => {
                     console.error("Erro ao enviar SMS:", error);
-                    showToast('Erro ao enviar SMS. Verifique o número e tente novamente.');
-                    // Limpa o reCAPTCHA para permitir nova tentativa
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
-                    }
+                    showToast('Erro ao enviar SMS. Tente resolver o CAPTCHA novamente.');
+                    // Reseta o reCAPTCHA para uma nova tentativa
+                    grecaptcha.reset();
+                    document.getElementById('send-code-btn').disabled = true;
                 });
         });
 
@@ -539,8 +548,7 @@
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
 
         showStep(currentStep);
-        // Não é mais necessário iniciar o recaptcha aqui
-        // renderRecaptcha(); 
+        renderRecaptcha(); // Inicia o reCAPTCHA ao carregar a página
     });
     </script>
 </body>
