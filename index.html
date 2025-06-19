@@ -320,6 +320,7 @@
         let fruitToastShown = false;
         const adminPhoneNumber = '+5588981905006';
         window.confirmationResult = null;
+        let isQuickOrder = false; // ATUALIZAÇÃO: Variável de controle para o pedido rápido
         
         // --- 2. DEFINIÇÃO DE TODAS AS FUNÇÕES ---
         const validateStep = {
@@ -427,13 +428,13 @@
         const generateSummary = () => {
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
-            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* 🍧', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
+            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* �', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
             
             cart.forEach((item, index) => {
                 summaryArray.push(`*COPO ${index + 1}*`);
                 const formatList = (title, list) => list.length > 0 ? `${title}: ${list.join(', ')}` : '';
                 summaryArray.push(`📦 *Tamanho:* ${item.size.name}`);
-                if(item.creams.length > 0) summaryArray.push(formatList('� *Cremes*', item.creams));
+                if(item.creams.length > 0) summaryArray.push(formatList('🍦 *Cremes*', item.creams));
                 if(item.toppings.length > 0) summaryArray.push(formatList('🥣 *Acompanhamentos*', item.toppings));
                 if(item.fruits.length > 0) summaryArray.push(formatList('🍓 *Frutas*', item.fruits));
                 if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`🍫 *Cobertura:* ${item.syrup}`);
@@ -494,21 +495,33 @@
         }
 
         async function saveOrderToFirestore() {
-            if (!auth.currentUser) {
-                showToast("Você precisa estar logado para salvar o pedido.");
-                return Promise.reject("Usuário não logado");
-            }
+            // CORREÇÃO: Lida com pedidos logados e rápidos
+            let pedidoParaSalvar;
             generateSummary();
-            const pedidoParaSalvar = {
-                clienteId: auth.currentUser.uid,
-                clienteNome: order.name,
-                clienteTelefone: auth.currentUser.phoneNumber,
-                dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
-                carrinho: order.cart,
-                entrega: order.delivery,
-                pagamento: order.payment,
-                status: "Recebido"
-            };
+
+            if (auth.currentUser) {
+                pedidoParaSalvar = {
+                    clienteId: auth.currentUser.uid,
+                    clienteNome: order.name,
+                    clienteTelefone: auth.currentUser.phoneNumber,
+                    dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
+                    carrinho: order.cart,
+                    entrega: order.delivery,
+                    pagamento: order.payment,
+                    status: "Recebido"
+                };
+            } else {
+                 pedidoParaSalvar = {
+                    clienteId: null, // Pedido rápido, sem ID de usuário
+                    clienteNome: order.name,
+                    clienteTelefone: order.phone,
+                    dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
+                    carrinho: order.cart,
+                    entrega: order.delivery,
+                    pagamento: order.payment,
+                    status: "Recebido"
+                };
+            }
 
             try {
                 const docRef = await db.collection("pedidos").add(pedidoParaSalvar);
@@ -677,10 +690,11 @@
             dynamicButtons.forEach(btn => btn.remove());
 
             if (user) {
+                isQuickOrder = false; // Garante que o modo de pedido rápido é desativado ao logar
                 const userRef = db.collection('users').doc(user.uid);
                 const userDoc = await userRef.get().catch(err => { 
                     console.error("Erro de permissão ao buscar usuário:", err);
-                    return null; // Retorna nulo para tratar o erro
+                    return null;
                 });
                 
                 if (user.phoneNumber === adminPhoneNumber) {
@@ -725,14 +739,17 @@
                 }
 
             } else {
-                showFormPanel();
-                phoneLoginContainer.classList.remove('hidden');
-                quickOrderForm.classList.add('hidden');
-                userLoggedInForm.classList.add('hidden');
-                order.name = '';
-                order.phone = '';
-                currentStep = 1; 
-                showStep(1);
+                // CORREÇÃO: Só reseta a view se não estiver no fluxo de pedido rápido
+                if (!isQuickOrder) {
+                    showFormPanel();
+                    phoneLoginContainer.classList.remove('hidden');
+                    quickOrderForm.classList.add('hidden');
+                    userLoggedInForm.classList.add('hidden');
+                    order.name = '';
+                    order.phone = '';
+                    currentStep = 1; 
+                    showStep(1);
+                }
             }
         });
         
@@ -791,8 +808,13 @@
                 showToast("Pedido salvo e pronto para enviar!");
                 window.open(whatsappUrl, '_blank');
             } catch (error) {
-                showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
-                window.open(whatsappUrl, '_blank');
+                // CORREÇÃO: Trata o caso de usuário não logado (pedido rápido)
+                if (error === "Usuário não logado" && isQuickOrder) {
+                     window.open(whatsappUrl, '_blank');
+                } else {
+                    showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
+                    window.open(whatsappUrl, '_blank');
+                }
             }
         });
         
@@ -824,29 +846,33 @@
             const el = document.getElementById(id);
             if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
         });
+        
+        // CORREÇÃO: Listener de pagamento separado para mais clareza
         document.getElementById('payment-method').addEventListener('change', (e) => {
             const method = e.target.value;
-            const baseTotal = (order.cart.reduce((total, item) => total + item.size.price + item.additionalToppingCost, 0)) || 0;
-            const price = `R$ ${baseTotal.toFixed(2)}`;
+            const trocoGroup = document.getElementById('cash-info');
+            const pixGroup = document.getElementById('pix-info');
+            ['credit-card-info', 'debit-card-info'].forEach(id => document.getElementById(id).classList.add('hidden'));
 
-            ['pix-info', 'cash-info', 'credit-card-info', 'debit-card-info'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            trocoGroup.classList.toggle('hidden', method !== 'Dinheiro');
+            pixGroup.classList.toggle('hidden', method !== 'Pix');
 
-            if (method === 'Pix') document.getElementById('pix-info').classList.remove('hidden'); 
-            if (method === 'Dinheiro') document.getElementById('cash-info').classList.remove('hidden'); 
-            if (method === 'Cartão Crédito') { 
-                document.getElementById('cc-original-price').innerText = price; 
-                document.getElementById('cc-total-price').innerText = `R$ ${(baseTotal * 1.034).toFixed(2)}`; 
-                document.getElementById('credit-card-info').classList.remove('hidden'); 
-            } 
-            if (method === 'Cartão Débito') { 
-                document.getElementById('dc-original-price').innerText = price; 
-                document.getElementById('dc-total-price').innerText = `R$ ${(baseTotal * 1.014).toFixed(2)}`; 
-                document.getElementById('debit-card-info').classList.remove('hidden'); 
-            } 
-            
-            const s = e.target.closest('.step').id.split('-')[1]; 
-            if (s && validateStep[s]) validateStep[s](); 
+            if (method === 'Cartão Crédito' || method === 'Cartão Débito') {
+                const baseTotal = (order.cart.reduce((total, item) => total + item.size.price + item.additionalToppingCost, 0)) || 0;
+                const price = `R$ ${baseTotal.toFixed(2)}`;
+                if (method === 'Cartão Crédito') {
+                    document.getElementById('cc-original-price').innerText = price;
+                    document.getElementById('cc-total-price').innerText = `R$ ${(baseTotal * 1.034).toFixed(2)}`;
+                    document.getElementById('credit-card-info').classList.remove('hidden');
+                } else {
+                    document.getElementById('dc-original-price').innerText = price;
+                    document.getElementById('dc-total-price').innerText = `R$ ${(baseTotal * 1.014).toFixed(2)}`;
+                    document.getElementById('debit-card-info').classList.remove('hidden');
+                }
+            }
+            validateStep[8]();
         });
+
         document.querySelectorAll('.checkbox-group').forEach(g => { g.addEventListener('change', e => { const cbs = g.querySelectorAll('input[type=checkbox]'); const count = Array.from(cbs).filter(cb => cb.checked).length; if (g.hasAttribute('data-max')) { const max = parseInt(g.dataset.max, 10); if (count > max) e.target.checked = false; if (count === max) { if (g.id === 'creams-group') showToast('Dupla Perfeita! 🍦'); if (g.id === 'fruits-group') showToast('Seleção Saudável! 🍓');}} if (g.id === 'fruits-group' && count > 0 && !fruitToastShown) { showToast('Disponibilidade das frutas a confirmar via WhatsApp.'); fruitToastShown = true; } cbs.forEach(cb => cb.parentElement.classList.toggle('checked', cb.checked)); }); });
         const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
         toppingsGroup.addEventListener('change', () => { const free = 4, count = toppingsGroup.querySelectorAll('input:checked').length, extra = Math.max(0, count - free); toppingInfo.textContent = extra > 0 ? `Adicionais: ${extra} (R$ ${extra.toFixed(2)})` : `Você tem ${Math.max(0, free-count)} acompanhamento(s) grátis.`; if (count === free) showToast('Combo Incrível! 🏆'); });
@@ -860,10 +886,20 @@
             document.getElementById('modal-pix-value').textContent = `R$ ${order.payment.baseTotal.toFixed(2)}`; 
             document.getElementById('modal-pix').classList.add('show'); 
         });
+
         document.getElementById('copy-br-code-btn').addEventListener('click', () => { 
             saveFinalOrderData();
             const brCode = generateBrCode();
-            fallbackCopyTextToClipboard(brCode);
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(brCode)
+                    .then(() => showToast('Código Pix copiado!'))
+                    .catch(err => {
+                        console.error('Falha ao copiar com a API moderna: ', err);
+                        fallbackCopyTextToClipboard(brCode);
+                    });
+            } else {
+                fallbackCopyTextToClipboard(brCode);
+            }
         });
         
         const modalPix = document.getElementById('modal-pix');
@@ -898,9 +934,10 @@
         });
 
         quickOrderSubmitBtn.addEventListener('click', () => {
+            isQuickOrder = true; // ATUALIZAÇÃO: Sinaliza que estamos no fluxo de pedido rápido
             order.name = quickFullNameInput.value.trim();
             order.phone = quickPhoneInput.value.trim();
-            order.clienteId = null; // Indica que é um pedido rápido sem login
+            order.clienteId = null; 
             nextStep();
         });
 
