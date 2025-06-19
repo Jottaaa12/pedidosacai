@@ -20,6 +20,7 @@
             --primary-color: #4A00E0; --secondary-color: #8E2DE2; --background-color: #f4f4f9;
             --widget-background: #ffffff; --text-color: #333; --border-color: #ddd;
             --disabled-color: #ccc; --warning-bg: #fffbe6; --warning-border: #facc15; --warning-text: #b45309;
+            --success-bg: #f0fff4; --success-border: #9ae6b4; --success-text: #2f855a;
         }
         body {
             font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color);
@@ -48,7 +49,7 @@
         #cart-indicator.show { transform: scale(1); }
         #progress-bar-container { width: 100%; background-color: var(--border-color); }
         #progress-bar { height: 8px; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.5s ease-in-out; }
-        #form-content { padding: 25px 30px; }
+        #form-content, #admin-panel { padding: 25px 30px; }
         .step { display: none; animation: fadeIn 0.5s; }
         .step.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -93,6 +94,52 @@
         .footer-credits a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
         .footer-credits a:hover { text-decoration: underline; }
 
+        /* Estilos do Painel de Admin */
+        #admin-panel {
+            padding-bottom: 50px;
+        }
+        .admin-order-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .admin-order-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+        .admin-order-card p {
+            margin: 4px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .admin-order-card .order-items {
+            margin-top: 10px;
+            padding-left: 15px;
+            border-left: 2px solid var(--border-color);
+        }
+        .admin-order-card strong {
+            font-weight: 600;
+            color: #333;
+        }
+        .order-status-group {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .order-status-group select {
+            flex-grow: 1;
+        }
+        .order-status-group button {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
         /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
         .modal-overlay.show { opacity: 1; pointer-events: all; }
@@ -107,7 +154,7 @@
         @media (max-width: 480px) {
             body { padding: 0; align-items: flex-start; }
             #widget-container { width: 100%; margin: 0; border-radius: 0; box-shadow: none; min-height: 100vh; }
-            #form-content { padding: 20px 15px; }
+            #form-content, #admin-panel { padding: 20px 15px; }
             input, select, button, .pix-btn { padding: 14px; font-size: 1rem; }
             .checkbox-group, .radio-group { grid-template-columns: 1fr; }
             .choice-item { white-space: nowrap; }
@@ -120,6 +167,7 @@
         <div id="toast-notification"></div>
         <div id="cart-indicator" class="hidden">0</div>
         <div id="progress-bar-container"><div id="progress-bar"></div></div>
+        
         <div id="form-content">
             <!-- Etapa 1: Login/Identificação -->
             <div id="step-1" class="step active">
@@ -136,7 +184,6 @@
                         <input type="tel" id="phone" placeholder="Ex: 88912345678">
                     </div>
                     
-                    <!-- Elemento reCAPTCHA visível -->
                     <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
 
                     <div class="button-group" style="justify-content: center;">
@@ -160,29 +207,35 @@
                         <input type="text" id="fullName">
                     </div>
                     <div class="button-group">
+                        <!-- Botão de Admin será inserido aqui pelo JS -->
                         <button id="logout-btn" class="back-btn">Sair</button>
                         <button id="btn-step1" class="next-btn" disabled>Iniciar Pedido</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Etapa 2: Tamanho -->
+            <!-- Etapas do formulário (2 a 9) -->
             <div id="step-2" class="step"><div class="step-header"><h2>📦 Escolha o tamanho</h2></div><div id="size-group" class="radio-group"><label class="choice-item"><input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 300g – R$ 15,00</label><label class="choice-item"><input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 360g – R$ 18,00</label><label class="choice-item"><input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 400g – R$ 20,00</label><label class="choice-item"><input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 440g – R$ 22,00</label><label class="choice-item"><input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 500g – R$ 25,00</label><label class="choice-item"><input type="radio" name="size" value="custom"> Outro valor</label></div><div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;"><label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label><input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30"><p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step2" class="next-btn" disabled>Próximo</button></div></div>
-            <!-- Etapa 3: Cremes -->
             <div id="step-3" class="step"><div class="step-header"><h2>🍦 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="creams-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="creme" value="Creme de maracujá"> Creme de maracujá</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de morango"> Creme de morango</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de ninho"> Creme de ninho</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de cupuaçu"> Creme de cupuaçu</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <!-- Etapa 4: Acompanhamentos -->
             <div id="step-4" class="step"><div class="step-header"><h2>🥣 Acompanhamentos</h2><button class="action-btn surprise-btn">✨ Surpreenda-me!</button><button class="action-btn clear-btn">Limpar</button></div><div id="topping-info">Você tem 4 acompanhamentos grátis.</div><div id="toppings-group" class="checkbox-group"><label class="choice-item"><input type="checkbox" name="topping" value="Leite em pó"> Leite em pó</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha Caramelizada"> Castanha Caramelizada</label><label class="choice-item"><input type="checkbox" name="topping" value="Granola"> Granola</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha"> Castanha</label><label class="choice-item"><input type="checkbox" name="topping" value="Gotas de Chocolate"> Gotas de Chocolate</label><label class="choice-item"><input type="checkbox" name="topping" value="Paçoquita"> Paçoquita</label><label class="choice-item"><input type="checkbox" name="topping" value="Amendoim"> Amendoim</label><label class="choice-item"><input type="checkbox" name="topping" value="Chocoball"> Chocoball</label><label class="choice-item"><input type="checkbox" name="topping" value="Canudinho Biju"> Canudinho Biju</label><label class="choice-item"><input type="checkbox" name="topping" value="Cereja"> Cereja</label><label class="choice-item"><input type="checkbox" name="topping" value="Sucrilhos"> Sucrilhos</label><label class="choice-item"><input type="checkbox" name="topping" value="M&M"> M&M</label><label class="choice-item"><input type="checkbox" name="topping" value="Ovomaltine"> Ovomaltine</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Branco"> Cookies Branco</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Preto"> Cookies Preto</label><label class="choice-item"><input type="checkbox" name="topping" value="Farinha de tapioca"> Farinha de tapioca</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <!-- Etapa 5: Frutas -->
             <div id="step-5" class="step"><div class="step-header"><h2>🍓 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="fruits-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="fruit" value="Morango"> Morango</label><label class="choice-item"><input type="checkbox" name="fruit" value="Kiwi"> Kiwi</label><label class="choice-item"><input type="checkbox" name="fruit" value="Uva"> Uva</label></div><p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <!-- Etapa 6: Toques Finais -->
             <div id="step-6" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button class="back-btn">Voltar</button><button id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
-            <!-- Etapa 7: Entrega -->
             <div id="step-7" class="step"><div class="step-header"><h2>📍 Local e Horário</h2></div><div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div><div class="form-group"><label for="delivery-location">Local de entrega</label><select id="delivery-location"><option value="" disabled selected>Selecione</option><option value="Bloco A">Bloco A</option><option value="Bloco B">Bloco B</option><option value="Bloco C">Bloco C</option><option value="Bloco D">Bloco D</option><option value="Onibus BITU">Onibus BITU</option><option value="Cantina da Nassau">Cantina da Nassau</option><option value="Restaurante Dunas">Restaurante Dunas</option></select><p id="bitu-bus-note" class="disclaimer-note hidden">Atenção, essa escolha é exclusivo para o onibus de bitupita.</p></div><div id="room-number-group" class="form-group hidden"><label for="room-number">Número da sala</label><input type="text" id="room-number"></div><div id="time-picker-group" class="form-group"><label for="delivery-time">Horário de entrega (hoje)</label><select id="delivery-time"><option value="" disabled selected>Selecione</option><option value="18h00">18h00</option><option value="19h00">19h00</option><option value="20h00">20h00</option><option value="21h00">21h00</option></select></div><div id="date-picker-group" class="form-group hidden"><label for="delivery-date">Escolha a data da entrega</label><input type="date" id="delivery-date"></div><p class="disclaimer-note">A data/horário é flexível e está sujeita a confirmação via WhatsApp.</p><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step7" class="next-btn" disabled>Próximo</button></div></div>
-            <!-- Etapa 8: Pagamento -->
             <div id="step-8" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step8" class="next-btn" disabled>Ver Resumo</button></div></div>
-            <!-- Etapa 9: Resumo -->
             <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group"><button class="back-btn">Corrigir</button><button id="save-order-btn" class="hidden">Salvar Pedido na Conta</button><a id="send-whatsapp" href="#" target="_blank">Enviar via WhatsApp</a></div></div>
         </div>
+        
+        <!-- PAINEL DE ADMIN -->
+        <div id="admin-panel" class="hidden">
+            <div class="step-header">
+                <h2>📋 Gerenciamento de Pedidos</h2>
+                <button id="back-to-form-btn" class="action-btn">Voltar ao Formulário</button>
+            </div>
+            <div id="admin-orders-list">
+                <p>Carregando pedidos...</p>
+            </div>
+        </div>
+
         <div class="footer-credits">Gerenciamento de pedidos, feito por <a href="https://instagram.com/jottaaa0" target="_blank" rel="noopener noreferrer">@jottaaa0</a></div>
     </div>
     
@@ -201,8 +254,6 @@
             messagingSenderId: "251748448639",
             appId: "1:251748448639:web:af23fa70969dfdadb6024a"
         };
-
-        // Inicializa o Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -218,52 +269,77 @@
         let toastTimeout;
         const qrCodeInstance = new QRCode(document.getElementById("qrcode-container"), { width: 256, height: 256 });
         let fruitToastShown = false;
+        const adminPhoneNumber = '+5588981905006';
 
-        // --- INÍCIO: LÓGICA DO FIREBASE ---
-
+        // --- INÍCIO: LÓGICA DO FIREBASE E ADMIN ---
         window.confirmationResult = null;
 
-        // Gerencia a UI com base no estado de login
         auth.onAuthStateChanged(user => {
+            const formContent = document.getElementById('form-content');
+            const adminPanel = document.getElementById('admin-panel');
             const phoneLoginForm = document.getElementById('phone-login-form');
             const userLoggedInForm = document.getElementById('user-logged-in-form');
             const saveOrderBtn = document.getElementById('save-order-btn');
+            
+            const existingAdminBtn = document.getElementById('admin-btn');
+            if(existingAdminBtn) existingAdminBtn.remove();
 
             if (user) {
-                // Usuário está logado
-                phoneLoginForm.classList.add('hidden');
-                userLoggedInForm.classList.remove('hidden');
+                if (user.phoneNumber === adminPhoneNumber) {
+                    // Se for admin, mostra direto o painel
+                    formContent.classList.add('hidden');
+                    adminPanel.classList.remove('hidden');
+                    showAdminPanel();
+                } else {
+                    // Se for cliente, mostra o formulário de pedido
+                    formContent.classList.remove('hidden');
+                    adminPanel.classList.add('hidden');
+                    phoneLoginForm.classList.add('hidden');
+                    userLoggedInForm.classList.remove('hidden');
+                }
+                
                 document.getElementById('logged-in-phone').textContent = user.phoneNumber;
-                order.phone = user.phoneNumber; // Pré-preenche o telefone do pedido
-                saveOrderBtn.classList.remove('hidden'); // Mostra o botão de salvar
+                order.phone = user.phoneNumber;
+                saveOrderBtn.classList.remove('hidden');
+
+                // Adiciona o botão de admin se for o admin
+                if (user.phoneNumber === adminPhoneNumber) {
+                    const logoutBtn = document.getElementById('logout-btn');
+                    const adminBtn = document.createElement('button');
+                    adminBtn.id = 'admin-btn';
+                    adminBtn.textContent = 'Gerenciar Pedidos';
+                    adminBtn.classList.add('action-btn');
+                    logoutBtn.parentNode.insertBefore(adminBtn, logoutBtn);
+                    
+                    adminBtn.addEventListener('click', showAdminPanel);
+                }
+
             } else {
-                // Usuário está deslogado
+                // Usuário deslogado
+                formContent.classList.remove('hidden');
+                adminPanel.classList.add('hidden');
                 phoneLoginForm.classList.remove('hidden');
                 userLoggedInForm.classList.add('hidden');
-                saveOrderBtn.classList.add('hidden'); // Esconde o botão de salvar
+                saveOrderBtn.classList.add('hidden');
                 order.name = '';
                 order.phone = '';
             }
         });
         
-        // CORREÇÃO: Função para renderizar o reCAPTCHA VISÍVEL
         function renderRecaptcha() {
             const sendCodeBtn = document.getElementById('send-code-btn');
             window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'normal', // Tornando o reCAPTCHA visível
+                'size': 'normal',
                 'callback': (response) => {
-                    // reCAPTCHA resolvido, habilita o botão de enviar SMS
                     sendCodeBtn.disabled = false;
                 },
                 'expired-callback': () => {
-                    // reCAPTCHA expirou, desabilita o botão
                     sendCodeBtn.disabled = true;
                 }
             });
             window.recaptchaVerifier.render();
         }
 
-        // Envia o código SMS para o telefone
         document.getElementById('send-code-btn').addEventListener('click', () => {
             const phoneInput = document.getElementById('phone');
             let phoneNumber = phoneInput.value.replace(/\D/g, ''); 
@@ -276,7 +352,6 @@
             if (!phoneNumber.startsWith('55')) {
                 phoneNumber = '55' + phoneNumber;
             }
-            // Usa o verificador que já está visível na tela
             const appVerifier = window.recaptchaVerifier;
 
             auth.signInWithPhoneNumber(`+${phoneNumber}`, appVerifier)
@@ -286,14 +361,14 @@
                     document.getElementById('code-verification-group').classList.remove('hidden');
                 }).catch((error) => {
                     console.error("Erro ao enviar SMS:", error);
-                    showToast('Erro ao enviar SMS. Tente resolver o CAPTCHA novamente.');
-                    // Reseta o reCAPTCHA para uma nova tentativa
-                    grecaptcha.reset();
-                    document.getElementById('send-code-btn').disabled = true;
+                    showToast('Erro ao enviar SMS. Tente novamente.');
+                    try {
+                       grecaptcha.reset();
+                       document.getElementById('send-code-btn').disabled = true;
+                    } catch(e) { console.error("Erro ao resetar reCAPTCHA", e)}
                 });
         });
 
-        // Verifica o código SMS
         document.getElementById('verify-code-btn').addEventListener('click', () => {
             const code = document.getElementById('verification-code').value;
             if (!window.confirmationResult || !code) return;
@@ -307,20 +382,19 @@
             });
         });
 
-        // Botão para sair (logout)
         document.getElementById('logout-btn').addEventListener('click', () => {
             auth.signOut().then(() => {
                 showToast('Você saiu da sua conta.');
+                showFormPanel(); // Garante que o painel de admin feche ao sair
             });
         });
 
-        // Função para salvar pedido no Firestore
         document.getElementById('save-order-btn').addEventListener('click', () => {
              if (!auth.currentUser) {
                 showToast("Você precisa estar logado para salvar.");
                 return;
             }
-            generateSummary(); // Garante que o objeto `order` está atualizado
+            generateSummary();
             const pedidoParaSalvar = {
                 clienteId: auth.currentUser.uid,
                 clienteNome: order.name,
@@ -343,8 +417,100 @@
                 });
         });
 
-        // --- FIM: LÓGICA DO FIREBASE ---
+        function showAdminPanel() {
+            document.getElementById('form-content').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('progress-bar-container').classList.add('hidden');
+            fetchAndDisplayAllOrders();
+        }
 
+        function showFormPanel() {
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('form-content').classList.remove('hidden');
+            document.getElementById('progress-bar-container').classList.remove('hidden');
+            showStep(currentStep); // Volta para a etapa atual do formulário
+        }
+        
+        document.getElementById('back-to-form-btn').addEventListener('click', showFormPanel);
+        
+        function fetchAndDisplayAllOrders() {
+            const ordersListDiv = document.getElementById('admin-orders-list');
+            ordersListDiv.innerHTML = '<p>Carregando pedidos...</p>';
+
+            // Listener em tempo real para os pedidos
+            db.collection('pedidos').orderBy('dataDoPedido', 'desc')
+              .onSnapshot(querySnapshot => {
+                if (querySnapshot.empty) {
+                    ordersListDiv.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+                    return;
+                }
+
+                ordersListDiv.innerHTML = ''; // Limpa a lista
+                querySnapshot.forEach(doc => {
+                    const orderData = doc.data();
+                    const orderCard = document.createElement('div');
+                    orderCard.className = 'admin-order-card';
+
+                    const pedidoDate = orderData.dataDoPedido ? orderData.dataDoPedido.toDate() : new Date();
+                    const formattedDate = pedidoDate.toLocaleDateString('pt-BR') + ' às ' + pedidoDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+                    let itemsHtml = '';
+                    orderData.carrinho.forEach((item, index) => {
+                        itemsHtml += `<p><strong>Copo ${index + 1}:</strong> ${item.size.name}</p>`;
+                    });
+                    
+                    let detalhesCopo = '';
+                    if (orderData.carrinho[0]) {
+                        const primeiroCopo = orderData.carrinho[0];
+                        if (primeiroCopo.creams && primeiroCopo.creams.length > 0) detalhesCopo += `<p><strong>Cremes:</strong> ${primeiroCopo.creams.join(', ')}</p>`;
+                        if (primeiroCopo.toppings && primeiroCopo.toppings.length > 0) detalhesCopo += `<p><strong>Acompanhamentos:</strong> ${primeiroCopo.toppings.join(', ')}</p>`;
+                        if (primeiroCopo.fruits && primeiroCopo.fruits.length > 0) detalhesCopo += `<p><strong>Frutas:</strong> ${primeiroCopo.fruits.join(', ')}</p>`;
+                        if (primeiroCopo.syrup && primeiroCopo.syrup !== 'Sem cobertura') detalhesCopo += `<p><strong>Cobertura:</strong> ${primeiroCopo.syrup}</p>`;
+                    }
+
+                    orderCard.innerHTML = `
+                        <h3>Pedido de: ${orderData.clienteNome || 'Nome não informado'}</h3>
+                        <p><strong>Telefone:</strong> ${orderData.clienteTelefone}</p>
+                        <p><strong>Data:</strong> ${formattedDate}</p>
+                        <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)} (${orderData.pagamento.method})</p>
+                        <div class="order-items">${itemsHtml}${detalhesCopo}</div>
+                        <div class="order-status-group">
+                            <label for="status-${doc.id}" style="margin-bottom:0;">Status:</label>
+                            <select id="status-${doc.id}">
+                                <option value="Recebido" ${orderData.status === 'Recebido' ? 'selected' : ''}>Recebido</option>
+                                <option value="Em preparo" ${orderData.status === 'Em preparo' ? 'selected' : ''}>Em preparo</option>
+                                <option value="Saiu para entrega" ${orderData.status === 'Saiu para entrega' ? 'selected' : ''}>Saiu para entrega</option>
+                                <option value="Finalizado" ${orderData.status === 'Finalizado' ? 'selected' : ''}>Finalizado</option>
+                                <option value="Cancelado" ${orderData.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                            </select>
+                            <button class="save-status-btn" data-id="${doc.id}">Salvar</button>
+                        </div>
+                    `;
+                    ordersListDiv.appendChild(orderCard);
+                });
+                
+                document.querySelectorAll('.save-status-btn').forEach(button => {
+                    button.addEventListener('click', async (e) => {
+                        const orderId = e.target.dataset.id;
+                        const newStatus = document.getElementById(`status-${orderId}`).value;
+                        try {
+                            await db.collection('pedidos').doc(orderId).update({ status: newStatus });
+                            showToast('Status do pedido atualizado!');
+                        } catch (error) {
+                            showToast('Erro ao atualizar status.');
+                            console.error("Erro ao atualizar status:", error);
+                        }
+                    });
+                });
+
+            }, error => {
+                console.error("Erro ao buscar pedidos em tempo real: ", error);
+                ordersListDiv.innerHTML = '<p>Erro ao carregar pedidos. Verifique o console.</p>';
+            });
+        }
+        
+        // --- FIM: LÓGICA DO FIREBASE E ADMIN ---
+        
         const showToast = (message) => {
             const toast = document.getElementById('toast-notification');
             toast.textContent = message; toast.classList.add('show');
