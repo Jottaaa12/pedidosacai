@@ -619,6 +619,29 @@
             }
         }
         
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('Código Pix copiado!');
+                } else {
+                    showToast('Falha ao copiar a chave.');
+                }
+            } catch (err) {
+                console.error('Falha ao copiar com o método antigo: ', err);
+                showToast('Falha ao copiar a chave.');
+            }
+            document.body.removeChild(textArea);
+        }
+
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
         
         auth.onAuthStateChanged(async user => {
@@ -773,38 +796,40 @@
             nextStep();
         });
         document.getElementById('form-content').addEventListener('input', e => { const s = e.target.closest('.step')?.id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); });
-        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date', 'payment-method'].forEach(id => { 
+        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date'].forEach(id => { 
             const el = document.getElementById(id);
             if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
         });
+
+        document.getElementById('payment-method').addEventListener('change', (e) => {
+            const method = e.target.value;
+            const baseTotal = (order.cart.reduce((total, item) => total + item.size.price + item.additionalToppingCost, 0)) || 0;
+            const price = `R$ ${baseTotal.toFixed(2)}`;
+
+            ['pix-info', 'cash-info', 'credit-card-info', 'debit-card-info'].forEach(id => document.getElementById(id).classList.add('hidden'));
+
+            if (method === 'Pix') document.getElementById('pix-info').classList.remove('hidden'); 
+            if (method === 'Dinheiro') document.getElementById('cash-info').classList.remove('hidden'); 
+            if (method === 'Cartão Crédito') { 
+                document.getElementById('cc-original-price').innerText = price; 
+                document.getElementById('cc-total-price').innerText = `R$ ${(baseTotal * 1.034).toFixed(2)}`; 
+                document.getElementById('credit-card-info').classList.remove('hidden'); 
+            } 
+            if (method === 'Cartão Débito') { 
+                document.getElementById('dc-original-price').innerText = price; 
+                document.getElementById('dc-total-price').innerText = `R$ ${(baseTotal * 1.014).toFixed(2)}`; 
+                document.getElementById('debit-card-info').classList.remove('hidden'); 
+            } 
+            
+            const s = e.target.closest('.step').id.split('-')[1]; 
+            if (s && validateStep[s]) validateStep[s](); 
+        });
+
         document.querySelectorAll('.checkbox-group').forEach(g => { g.addEventListener('change', e => { const cbs = g.querySelectorAll('input[type=checkbox]'); const count = Array.from(cbs).filter(cb => cb.checked).length; if (g.hasAttribute('data-max')) { const max = parseInt(g.dataset.max, 10); if (count > max) e.target.checked = false; if (count === max) { if (g.id === 'creams-group') showToast('Dupla Perfeita! 🍦'); if (g.id === 'fruits-group') showToast('Seleção Saudável! 🍓');}} if (g.id === 'fruits-group' && count > 0 && !fruitToastShown) { showToast('Disponibilidade das frutas a confirmar via WhatsApp.'); fruitToastShown = true; } cbs.forEach(cb => cb.parentElement.classList.toggle('checked', cb.checked)); }); });
         const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
         toppingsGroup.addEventListener('change', () => { const free = 4, count = toppingsGroup.querySelectorAll('input:checked').length, extra = Math.max(0, count - free); toppingInfo.textContent = extra > 0 ? `Adicionais: ${extra} (R$ ${extra.toFixed(2)})` : `Você tem ${Math.max(0, free-count)} acompanhamento(s) grátis.`; if (count === free) showToast('Combo Incrível! 🏆'); });
         document.querySelectorAll('.clear-btn, .surprise-btn').forEach(btn => btn.addEventListener('click', e => { const g = e.target.closest('.step').querySelector('.checkbox-group'), cbs = Array.from(g.querySelectorAll('input[type=checkbox]')); cbs.forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('checked'); }); if (e.target.classList.contains('surprise-btn')) { const max = g.id === 'toppings-group' ? 4 : parseInt(g.dataset.max, 10); const shuffled = cbs.sort(() => 0.5 - Math.random()); shuffled.slice(0, max).forEach(cb => { cb.checked = true; cb.parentElement.classList.add('checked'); }); } if (g.id === 'toppings-group') toppingsGroup.dispatchEvent(new Event('change')); }));
         
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    showToast('Código Pix copiado!');
-                } else {
-                    showToast('Falha ao copiar a chave.');
-                }
-            } catch (err) {
-                console.error('Falha ao copiar com o método antigo: ', err);
-                showToast('Falha ao copiar a chave.');
-            }
-            document.body.removeChild(textArea);
-        }
-
         document.getElementById('generate-qr-btn').addEventListener('click', () => { 
             saveFinalOrderData();
             const brCode = generateBrCode();
@@ -817,15 +842,7 @@
         document.getElementById('copy-br-code-btn').addEventListener('click', () => { 
             saveFinalOrderData();
             const brCode = generateBrCode();
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(brCode).then(() => showToast('Código Pix copiado!'))
-                .catch(err => {
-                    console.error('Falha ao copiar com a API moderna: ', err);
-                    fallbackCopyTextToClipboard(brCode);
-                });
-            } else {
-                fallbackCopyTextToClipboard(brCode);
-            }
+            fallbackCopyTextToClipboard(brCode);
         });
 
         const modalPix = document.getElementById('modal-pix');
