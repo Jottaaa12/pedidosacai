@@ -222,7 +222,7 @@
             <div id="step-6" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button class="back-btn">Voltar</button><button id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
             <div id="step-7" class="step"><div class="step-header"><h2>📍 Local e Horário</h2></div><div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div><div class="form-group"><label for="delivery-location">Local de entrega</label><select id="delivery-location"><option value="" disabled selected>Selecione</option><option value="Bloco A">Bloco A</option><option value="Bloco B">Bloco B</option><option value="Bloco C">Bloco C</option><option value="Bloco D">Bloco D</option><option value="Onibus BITU">Onibus BITU</option><option value="Cantina da Nassau">Cantina da Nassau</option><option value="Restaurante Dunas">Restaurante Dunas</option></select><p id="bitu-bus-note" class="disclaimer-note hidden">Atenção, essa escolha é exclusivo para o onibus de bitupita.</p></div><div id="room-number-group" class="form-group hidden"><label for="room-number">Número da sala</label><input type="text" id="room-number"></div><div id="time-picker-group" class="form-group"><label for="delivery-time">Horário de entrega (hoje)</label><select id="delivery-time"><option value="" disabled selected>Selecione</option><option value="18h00">18h00</option><option value="19h00">19h00</option><option value="20h00">20h00</option><option value="21h00">21h00</option></select></div><div id="date-picker-group" class="form-group hidden"><label for="delivery-date">Escolha a data da entrega</label><input type="date" id="delivery-date"></div><p class="disclaimer-note">A data/horário é flexível e está sujeita a confirmação via WhatsApp.</p><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step7" class="next-btn" disabled>Próximo</button></div></div>
             <div id="step-8" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step8" class="next-btn" disabled>Ver Resumo</button></div></div>
-            <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group"><button class="back-btn">Corrigir</button><button id="save-order-btn" class="hidden">Salvar Pedido na Conta</button><a id="send-whatsapp" href="#" target="_blank">Enviar via WhatsApp</a></div></div>
+            <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group"><button class="back-btn">Corrigir</button><a id="send-whatsapp" href="#" target="_blank">Enviar via WhatsApp</a></div></div>
         </div>
         
         <!-- PAINEL DE ADMIN -->
@@ -279,7 +279,6 @@
             const adminPanel = document.getElementById('admin-panel');
             const phoneLoginForm = document.getElementById('phone-login-form');
             const userLoggedInForm = document.getElementById('user-logged-in-form');
-            const saveOrderBtn = document.getElementById('save-order-btn');
             
             const existingAdminBtn = document.getElementById('admin-btn');
             if(existingAdminBtn) existingAdminBtn.remove();
@@ -300,8 +299,7 @@
                 
                 document.getElementById('logged-in-phone').textContent = user.phoneNumber;
                 order.phone = user.phoneNumber;
-                saveOrderBtn.classList.remove('hidden');
-
+                
                 // Adiciona o botão de admin se for o admin
                 if (user.phoneNumber === adminPhoneNumber) {
                     const logoutBtn = document.getElementById('logout-btn');
@@ -320,7 +318,6 @@
                 adminPanel.classList.add('hidden');
                 phoneLoginForm.classList.remove('hidden');
                 userLoggedInForm.classList.add('hidden');
-                saveOrderBtn.classList.add('hidden');
                 order.name = '';
                 order.phone = '';
             }
@@ -388,13 +385,14 @@
                 showFormPanel(); // Garante que o painel de admin feche ao sair
             });
         });
-
-        document.getElementById('save-order-btn').addEventListener('click', () => {
+        
+        // NOVA FUNÇÃO para salvar o pedido
+        async function saveOrderToFirestore() {
              if (!auth.currentUser) {
-                showToast("Você precisa estar logado para salvar.");
-                return;
+                showToast("Você precisa estar logado para salvar o pedido.");
+                return Promise.reject("Usuário não logado");
             }
-            generateSummary();
+            generateSummary(); // Garante que o objeto `order` está 100% atualizado
             const pedidoParaSalvar = {
                 clienteId: auth.currentUser.uid,
                 clienteNome: order.name,
@@ -406,16 +404,37 @@
                 status: "Recebido"
             };
 
-            db.collection("pedidos").add(pedidoParaSalvar)
-                .then((docRef) => {
-                    showToast("Pedido salvo com sucesso na sua conta!");
-                    console.log("Pedido salvo com ID: ", docRef.id);
+            try {
+                const docRef = await db.collection("pedidos").add(pedidoParaSalvar);
+                showToast("Pedido salvo com sucesso na sua conta!");
+                console.log("Pedido salvo com ID: ", docRef.id);
+                return Promise.resolve();
+            } catch (error) {
+                console.error("Erro ao salvar pedido: ", error);
+                showToast("Erro ao salvar o pedido.");
+                return Promise.reject(error);
+            }
+        }
+        
+        // Listener do botão do WhatsApp
+        document.getElementById('send-whatsapp').addEventListener('click', (event) => {
+            // Previne a navegação imediata para o WhatsApp
+            event.preventDefault(); 
+            const whatsappUrl = event.target.href;
+
+            // Tenta salvar no Firestore PRIMEIRO
+            saveOrderToFirestore()
+                .then(() => {
+                    // Se salvar com sucesso (ou se não estiver logado mas continuar), abre o WhatsApp
+                    window.open(whatsappUrl, '_blank');
                 })
-                .catch((error) => {
-                    console.error("Erro ao salvar pedido: ", error);
-                    showToast("Erro ao salvar o pedido.");
+                .catch(() => {
+                    // Mesmo se der erro ao salvar, permite enviar pelo WhatsApp
+                    showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
+                    window.open(whatsappUrl, '_blank');
                 });
         });
+
 
         function showAdminPanel() {
             document.getElementById('form-content').classList.add('hidden');
@@ -460,7 +479,7 @@
                     });
                     
                     let detalhesCopo = '';
-                    if (orderData.carrinho[0]) {
+                    if (orderData.carrinho && orderData.carrinho[0]) {
                         const primeiroCopo = orderData.carrinho[0];
                         if (primeiroCopo.creams && primeiroCopo.creams.length > 0) detalhesCopo += `<p><strong>Cremes:</strong> ${primeiroCopo.creams.join(', ')}</p>`;
                         if (primeiroCopo.toppings && primeiroCopo.toppings.length > 0) detalhesCopo += `<p><strong>Acompanhamentos:</strong> ${primeiroCopo.toppings.join(', ')}</p>`;
