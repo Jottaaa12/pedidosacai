@@ -423,7 +423,7 @@
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
             if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `📍 *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `📍 *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            else { deliveryLine = `� *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
             summaryArray.push(deliveryLine);
 
             let paymentText = `💳 Pagamento: ${payment.method}${payment.info}`;
@@ -620,7 +620,7 @@
         }
         
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
-        
+
         auth.onAuthStateChanged(async user => {
             const formContent = document.getElementById('form-content');
             const adminPanel = document.getElementById('admin-panel');
@@ -793,4 +793,4 @@
     });
     </script>
 </body>
-</html>
+</html>"
