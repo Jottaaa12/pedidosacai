@@ -193,24 +193,45 @@
                     <p><a href="https://instagram.com/acaisabordaterra_" target="_blank" rel="noopener noreferrer">@acaisabordaterra_</a></p>
                 </div>
 
-                <!-- Formulário de Login com Telefone -->
-                <div id="phone-login-form">
-                    <div class="form-group">
-                        <label for="phone">Telefone (com DDD)</label>
-                        <input type="tel" id="phone" placeholder="Ex: 88912345678">
+                <!-- ATUALIZAÇÃO: Container para os dois tipos de login -->
+                <div id="login-options-container">
+                    <!-- Formulário de Login com Telefone (padrão) -->
+                    <div id="phone-login-container">
+                        <div id="phone-login-form">
+                            <div class="form-group">
+                                <label for="phone">Telefone (com DDD)</label>
+                                <input type="tel" id="phone" placeholder="Ex: 88912345678">
+                            </div>
+                            <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+                            <div class="button-group" style="justify-content: center;">
+                                <button id="send-code-btn" disabled>Enviar SMS de Verificação</button>
+                            </div>
+                            <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
+                                <label for="verification-code">Código de verificação</label>
+                                <input type="text" id="verification-code" placeholder="******">
+                                <div class="button-group" style="justify-content: center;">
+                                    <button id="verify-code-btn">Confirmar e Entrar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="button-group" style="justify-content: center; margin-top: 10px;">
+                             <button id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
+                        </div>
                     </div>
                     
-                    <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
-
-                    <div class="button-group" style="justify-content: center;">
-                        <button id="send-code-btn" disabled>Enviar SMS de Verificação</button>
-                    </div>
-                    
-                    <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
-                        <label for="verification-code">Código de verificação</label>
-                        <input type="text" id="verification-code" placeholder="******">
-                        <div class="button-group" style="justify-content: center;">
-                            <button id="verify-code-btn">Confirmar e Entrar</button>
+                    <!-- Formulário de Pedido Rápido (escondido) -->
+                    <div id="quick-order-form" class="hidden">
+                        <div class="form-group">
+                            <label for="quick-fullName">Seu nome</label>
+                            <input type="text" id="quick-fullName" placeholder="Digite seu nome">
+                        </div>
+                        <div class="form-group">
+                            <label for="quick-phone">Seu telefone (com DDD)</label>
+                            <input type="tel" id="quick-phone" placeholder="Ex: 88912345678">
+                        </div>
+                        <div class="button-group">
+                            <button id="back-to-login-btn" class="back-btn">Voltar para Login</button>
+                            <button id="quick-order-submit-btn" class="next-btn" disabled>Continuar Pedido</button>
                         </div>
                     </div>
                 </div>
@@ -473,15 +494,22 @@
         }
 
         async function saveOrderToFirestore() {
-            if (!auth.currentUser) {
-                showToast("Você precisa estar logado para salvar o pedido.");
-                return Promise.reject("Usuário não logado");
+            // CORREÇÃO: A lógica agora lida com ambos os casos, logado ou não
+            let clienteId = null;
+            let clienteNome = order.name;
+            let clienteTelefone = order.phone;
+
+            if (auth.currentUser) {
+                clienteId = auth.currentUser.uid;
+                clienteNome = order.name; // Já preenchido ao logar
+                clienteTelefone = auth.currentUser.phoneNumber;
             }
+            
             generateSummary();
             const pedidoParaSalvar = {
-                clienteId: auth.currentUser.uid,
-                clienteNome: order.name,
-                clienteTelefone: auth.currentUser.phoneNumber,
+                clienteId: clienteId,
+                clienteNome: clienteNome,
+                clienteTelefone: clienteTelefone,
                 dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
                 carrinho: order.cart,
                 entrega: order.delivery,
@@ -648,7 +676,8 @@
             const formContent = document.getElementById('form-content');
             const adminPanel = document.getElementById('admin-panel');
             const myOrdersPanel = document.getElementById('my-orders-panel');
-            const phoneLoginForm = document.getElementById('phone-login-form');
+            const phoneLoginContainer = document.getElementById('phone-login-container');
+            const quickOrderForm = document.getElementById('quick-order-form');
             const userLoggedInForm = document.getElementById('user-logged-in-form');
             
             const dynamicButtons = document.querySelectorAll('.dynamic-btn');
@@ -658,14 +687,15 @@
                 const userRef = db.collection('users').doc(user.uid);
                 const userDoc = await userRef.get().catch(err => { 
                     console.error("Erro de permissão ao buscar usuário:", err);
-                    return null; // Retorna nulo para tratar o erro
+                    return null;
                 });
                 
                 if (user.phoneNumber === adminPhoneNumber) {
                     showAdminPanel();
                 } else {
                     showFormPanel();
-                    phoneLoginForm.classList.add('hidden');
+                    phoneLoginContainer.classList.add('hidden');
+                    quickOrderForm.classList.add('hidden');
                     userLoggedInForm.classList.remove('hidden');
                     
                     if (userDoc && userDoc.exists && userDoc.data().displayName) {
@@ -703,7 +733,8 @@
 
             } else {
                 showFormPanel();
-                phoneLoginForm.classList.remove('hidden');
+                phoneLoginContainer.classList.remove('hidden');
+                quickOrderForm.classList.add('hidden');
                 userLoggedInForm.classList.add('hidden');
                 order.name = '';
                 order.phone = '';
@@ -738,13 +769,12 @@
             if (!window.confirmationResult || !code) return;
             window.confirmationResult.confirm(code).then((result) => { 
                 showToast('Login efetuado com sucesso!'); 
-                // A lógica de `onAuthStateChanged` vai tratar o resto
             })
             .catch((error) => { console.error("Erro ao verificar código:", error); showToast('Código inválido. Tente novamente.'); });
         });
 
         document.getElementById('logout-btn').addEventListener('click', () => {
-            auth.signOut().then(() => { showToast('Você saiu da sua conta.'); showFormPanel(); });
+            auth.signOut().then(() => { showToast('Você saiu da sua conta.'); });
         });
         
         document.getElementById('btn-step1').addEventListener('click', async () => {
@@ -767,12 +797,13 @@
                 showToast("Pedido salvo e pronto para enviar!");
                 window.open(whatsappUrl, '_blank');
             } catch (error) {
+                // Mesmo que dê erro ao salvar (ex: usuário não logado), permite o envio
                 showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
                 window.open(whatsappUrl, '_blank');
             }
         });
         
-        document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8)').forEach(btn => btn.addEventListener('click', nextStep));
+        document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8):not(#quick-order-submit-btn)').forEach(btn => btn.addEventListener('click', nextStep));
         document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', prevStep));
         
         document.getElementById('add-to-cart-btn').addEventListener('click', () => {
@@ -852,6 +883,36 @@
         const modalFinalize = document.getElementById('modal-finalize');
         document.getElementById('modal-finalize-close').addEventListener('click', () => modalFinalize.classList.remove('show'));
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
+        
+        // --- INÍCIO: LÓGICA DO PEDIDO RÁPIDO ---
+        const phoneLoginContainer = document.getElementById('phone-login-container');
+        const quickOrderForm = document.getElementById('quick-order-form');
+        const showQuickOrderBtn = document.getElementById('show-quick-order-btn');
+        const backToLoginBtn = document.getElementById('back-to-login-btn');
+        const quickOrderSubmitBtn = document.getElementById('quick-order-submit-btn');
+        const quickFullNameInput = document.getElementById('quick-fullName');
+        const quickPhoneInput = document.getElementById('quick-phone');
+
+        showQuickOrderBtn.addEventListener('click', () => {
+            phoneLoginContainer.classList.add('hidden');
+            quickOrderForm.classList.remove('hidden');
+        });
+
+        backToLoginBtn.addEventListener('click', () => {
+            quickOrderForm.classList.add('hidden');
+            phoneLoginContainer.classList.remove('hidden');
+        });
+
+        quickOrderForm.addEventListener('input', () => {
+            quickOrderSubmitBtn.disabled = !(quickFullNameInput.value && quickPhoneInput.value.length > 9);
+        });
+
+        quickOrderSubmitBtn.addEventListener('click', () => {
+            order.name = quickFullNameInput.value.trim();
+            order.phone = quickPhoneInput.value.trim();
+            order.clienteId = null; // Indica que é um pedido rápido sem login
+            nextStep();
+        });
 
         // --- 4. EXECUÇÃO INICIAL ---
         showStep(currentStep);
