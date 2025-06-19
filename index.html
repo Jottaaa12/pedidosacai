@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
+    <!-- CORREÇÃO: Meta charset padronizado para o formato curto. -->
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedido de Açaí - Sabor da Terra</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,12 +32,19 @@
             border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative;
         }
         #toast-notification {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(200%);
+            position: fixed; bottom: 20px; left: 50%; 
+            -webkit-transform: translateX(-50%) translateY(200%);
+            transform: translateX(-50%) translateY(200%);
             background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 20px;
             font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            opacity: 0; transition: all 0.4s ease-in-out; z-index: 1001;
+            opacity: 0; 
+            -webkit-transition: all 0.4s ease-in-out;
+            transition: all 0.4s ease-in-out; 
+            z-index: 1001;
         }
-        #toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast-notification.show { opacity: 1; 
+            -webkit-transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(0); }
         #cart-indicator {
             position: absolute; top: 15px; right: 20px;
             background-color: var(--primary-color); color: white;
@@ -44,19 +52,30 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 0.9rem; font-weight: 600;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            transform: scale(0); transition: transform 0.3s ease;
+            -webkit-transform: scale(0);
+            transform: scale(0); 
+            -webkit-transition: transform 0.3s ease;
+            transition: transform 0.3s ease;
         }
-        #cart-indicator.show { transform: scale(1); }
+        #cart-indicator.show { 
+            -webkit-transform: scale(1);
+            transform: scale(1); 
+        }
         #progress-bar-container { width: 100%; background-color: var(--border-color); }
-        #progress-bar { height: 8px; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.5s ease-in-out; }
+        #progress-bar { height: 8px; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); 
+            -webkit-transition: width 0.5s ease-in-out;
+            transition: width 0.5s ease-in-out; 
+        }
         #form-content, #admin-panel, #my-orders-panel { padding: 25px 30px; }
-        .step { display: none; animation: fadeIn 0.5s; }
+        .step { display: none; 
+            -webkit-animation: fadeIn 0.5s;
+            animation: fadeIn 0.5s; }
         .step.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .main-header { text-align: center; margin-bottom: 25px; }
         .main-header img.logo { max-width: 120px; margin-bottom: 15px; }
-        .main-header h2 { margin: 0 0 5px 0; color: var(--primary-color); font-weight: 700;}
+        .main-header h1 { margin: 0 0 5px 0; color: var(--primary-color); font-weight: 700; font-size: 1.8rem; }
         .main-header p { margin: 0; }
         .main-header a { color: var(--secondary-color); text-decoration: none; font-weight: 500; }
         .main-header a:hover { text-decoration: underline; }
@@ -64,24 +83,36 @@
         .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
         .step-header h2 { text-align: left; color: var(--primary-color); font-weight: 600; margin: 0; flex-grow: 1; }
         #topping-info { width: 100%; text-align: center; font-size: 0.9rem; font-weight: 500; color: var(--secondary-color); margin-bottom: 15px; }
-        .action-btn { font-size: 0.8rem; background: none; border: 1px solid var(--secondary-color); color: var(--secondary-color); cursor: pointer; padding: 5px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; transition: background-color 0.2s; }
+        .action-btn { font-size: 0.8rem; background: none; border: 1px solid var(--secondary-color); color: var(--secondary-color); cursor: pointer; padding: 5px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; 
+            -webkit-transition: background-color 0.2s;
+            transition: background-color 0.2s; 
+        }
         .action-btn:hover { background-color: #e9dffc; }
         .disclaimer-note { font-size: 0.8rem; color: #666; text-align: center; margin-top: 15px; background-color: #f9f9f9; padding: 8px; border-radius: 6px; }
         #time-sensitive-warning { background-color: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); margin-bottom: 15px; line-height: 1.5; }
         #time-sensitive-warning strong { color: var(--warning-text); font-weight: 600; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
-        .checkbox-group, .radio-group { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
-        input[type="text"], input[type="tel"], input[type="number"], select, textarea, input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Poppins', sans-serif; box-sizing: border-box; transition: border-color 0.3s, box-shadow 0.3s; }
+        input[type="text"], input[type="tel"], input[type="number"], select, textarea, input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Poppins', sans-serif; box-sizing: border-box; 
+            -webkit-transition: border-color 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 0, 224, 0.2); }
         textarea { resize: vertical; min-height: 80px; }
-        .choice-item { display: flex; align-items: center; background-color: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s ease; }
+        .choice-item { display: flex; align-items: center; background-color: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; 
+            -webkit-transition: all 0.2s ease;
+            transition: all 0.2s ease; }
         .choice-item:hover { border-color: var(--secondary-color); }
         .choice-item input { margin-right: 12px; accent-color: var(--primary-color); width: 1.2em; height: 1.2em; }
         .choice-item.checked { background-color: #e9dffc; border-color: var(--primary-color); font-weight: 500; }
         .button-group { display: flex; justify-content: space-between; margin-top: 30px; gap: 10px; }
-        button, #send-whatsapp, .pix-btn { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); color: var(--widget-background); border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        #send-whatsapp:hover, button:hover:not(:disabled), .pix-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
+        button, #send-whatsapp, .pix-btn { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); color: var(--widget-background); border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; 
+            -webkit-transition: all 0.3s ease;
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+        #send-whatsapp:hover, button:hover:not(:disabled), .pix-btn:hover { 
+            -webkit-transform: translateY(-2px);
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
         button:disabled { background: var(--disabled-color); cursor: not-allowed; box-shadow: none; transform: none; }
         .back-btn { background: none; color: var(--text-color); box-shadow: none; border: 1px solid var(--border-color); }
         .back-btn:hover { background-color: #f0f0f0; }
@@ -188,8 +219,10 @@
             <!-- Etapa 1: Login/Identificação -->
             <div id="step-1" class="step active">
                 <div class="main-header">
-                    <img src="https://i.imgur.com/9VzcNVM.png" alt="Logo Açaí Sabor da Terra" class="logo">
-                    <h2>Açaí Sabor da Terra</h2>
+                    <!-- ACESSIBILIDADE: Adicionado `alt` descritivo para a imagem do logo. -->
+                    <img src="https://i.imgur.com/9VzcNVM.png" alt="Logo do Açaí Sabor da Terra" class="logo">
+                    <!-- SEMÂNTICA: Título principal alterado para `<h1>` para melhor estrutura semântica. -->
+                    <h1>Açaí Sabor da Terra</h1>
                     <p><a href="https://instagram.com/acaisabordaterra_" target="_blank" rel="noopener noreferrer">@acaisabordaterra_</a></p>
                 </div>
 
@@ -200,7 +233,7 @@
                         <div id="phone-login-form">
                             <div class="form-group">
                                 <label for="phone">Telefone (com DDD)</label>
-                                <input type="tel" id="phone" placeholder="Ex: 88912345678">
+                                <input type="tel" id="phone" placeholder="Ex: 88912345678" autocomplete="tel">
                             </div>
                             <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
                             <div class="button-group" style="justify-content: center;">
@@ -208,7 +241,7 @@
                             </div>
                             <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
                                 <label for="verification-code">Código de verificação</label>
-                                <input type="text" id="verification-code" placeholder="******">
+                                <input type="text" id="verification-code" placeholder="******" autocomplete="one-time-code">
                                 <div class="button-group" style="justify-content: center;">
                                     <button id="verify-code-btn">Confirmar e Entrar</button>
                                 </div>
@@ -223,11 +256,11 @@
                     <div id="quick-order-form" class="hidden">
                         <div class="form-group">
                             <label for="quick-fullName">Seu nome</label>
-                            <input type="text" id="quick-fullName" placeholder="Digite seu nome">
+                            <input type="text" id="quick-fullName" placeholder="Digite seu nome" autocomplete="name">
                         </div>
                         <div class="form-group">
                             <label for="quick-phone">Seu telefone (com DDD)</label>
-                            <input type="tel" id="quick-phone" placeholder="Ex: 88912345678">
+                            <input type="tel" id="quick-phone" placeholder="Ex: 88912345678" autocomplete="tel">
                         </div>
                         <div class="button-group">
                             <button id="back-to-login-btn" class="back-btn">Voltar para Login</button>
@@ -241,7 +274,7 @@
                     <p style="text-align: center;">Olá! Você está logado com o número:<br><strong id="logged-in-phone"></strong></p>
                     <div class="form-group">
                         <label for="fullName">Seu nome (para o pedido)</label>
-                        <input type="text" id="fullName">
+                        <input type="text" id="fullName" autocomplete="name">
                     </div>
                     <div class="button-group">
                         <!-- Botões dinâmicos (Admin, Meus Pedidos) serão inseridos aqui -->
@@ -320,7 +353,7 @@
         let fruitToastShown = false;
         const adminPhoneNumber = '+5588981905006';
         window.confirmationResult = null;
-        let isQuickOrder = false; // ATUALIZAÇÃO: Variável de controle para o pedido rápido
+        let isQuickOrder = false;
         
         // --- 2. DEFINIÇÃO DE TODAS AS FUNÇÕES ---
         const validateStep = {
@@ -428,7 +461,7 @@
         const generateSummary = () => {
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
-            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* 🍧', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
+            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* �', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
             
             cart.forEach((item, index) => {
                 summaryArray.push(`*COPO ${index + 1}*`);
@@ -495,11 +528,10 @@
         }
 
         async function saveOrderToFirestore() {
-            // CORREÇÃO: Lida com pedidos logados e rápidos
             let pedidoParaSalvar;
             generateSummary();
 
-            if (auth.currentUser && !isQuickOrder) { // Salva com ID apenas se estiver logado E não for pedido rápido
+            if (auth.currentUser && !isQuickOrder) {
                 pedidoParaSalvar = {
                     clienteId: auth.currentUser.uid,
                     clienteNome: order.name,
@@ -512,7 +544,7 @@
                 };
             } else {
                  pedidoParaSalvar = {
-                    clienteId: null, // Pedido rápido, sem ID de usuário
+                    clienteId: null,
                     clienteNome: order.name,
                     clienteTelefone: order.phone,
                     dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
