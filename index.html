@@ -412,7 +412,7 @@
                 summaryArray.push(`*COPO ${index + 1}*`);
                 const formatList = (title, list) => list.length > 0 ? `${title}: ${list.join(', ')}` : '';
                 summaryArray.push(`📦 *Tamanho:* ${item.size.name}`);
-                if(item.creams.length > 0) summaryArray.push(formatList('� *Cremes*', item.creams));
+                if(item.creams.length > 0) summaryArray.push(formatList('🍦 *Cremes*', item.creams));
                 if(item.toppings.length > 0) summaryArray.push(formatList('🥣 *Acompanhamentos*', item.toppings));
                 if(item.fruits.length > 0) summaryArray.push(formatList('🍓 *Frutas*', item.fruits));
                 if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`🍫 *Cobertura:* ${item.syrup}`);
