@@ -301,6 +301,16 @@
         window.confirmationResult = null;
         
         // --- 2. DEFINIÇÃO DE TODAS AS FUNÇÕES ---
+        const validateStep = {
+            1: () => document.getElementById('btn-step1').disabled = !(document.getElementById('fullName').value),
+            2: () => { const sel = document.querySelector('input[name="size"]:checked'); const c = document.getElementById('custom-value-input'); const v = parseFloat(c.value); document.getElementById('custom-value-group').classList.toggle('hidden', !sel || sel.value !== 'custom'); document.getElementById('btn-step2').disabled = !sel || (sel.value === 'custom' && (isNaN(v) || v < 26 || v > 50)); },
+            6: () => document.getElementById('add-to-cart-btn').disabled = !document.querySelector('input[name="syrup"]:checked'),
+            7: () => { const locOk = document.getElementById('delivery-location').value; const needsRoom = ['Bloco A', 'Bloco B', 'Bloco C', 'Bloco D'].includes(locOk); document.getElementById('room-number-group').classList.toggle('hidden', !needsRoom); const roomOk = !needsRoom || (needsRoom && document.getElementById('room-number').value); const isDateVisible = !document.getElementById('date-picker-group').classList.contains('hidden'); const scheduleOk = isDateVisible ? document.getElementById('delivery-date').value : document.getElementById('delivery-time').value; document.getElementById('btn-step7').disabled = !(locOk && roomOk && scheduleOk); },
+            8: () => {
+                const paymentMethod = document.getElementById('payment-method').value;
+                document.getElementById('btn-step8').disabled = !paymentMethod;
+            }
+        };
 
         const showToast = (message) => {
             const toast = document.getElementById('toast-notification');
@@ -430,14 +440,6 @@
             const summaryText = summaryArray.filter(line => line).join('\n');
             document.getElementById('summary-container').innerText = summaryText.replace(/\*/g, '');
             document.getElementById('send-whatsapp').href = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(summaryText)}`;
-        };
-        
-        const validateStep = {
-            1: () => document.getElementById('btn-step1').disabled = !(document.getElementById('fullName').value),
-            2: () => { const sel = document.querySelector('input[name="size"]:checked'); const c = document.getElementById('custom-value-input'); const v = parseFloat(c.value); document.getElementById('custom-value-group').classList.toggle('hidden', !sel || sel.value !== 'custom'); document.getElementById('btn-step2').disabled = !sel || (sel.value === 'custom' && (isNaN(v) || v < 26 || v > 50)); },
-            6: () => document.getElementById('add-to-cart-btn').disabled = !document.querySelector('input[name="syrup"]:checked'),
-            7: () => { const locOk = document.getElementById('delivery-location').value; const needsRoom = ['Bloco A', 'Bloco B', 'Bloco C', 'Bloco D'].includes(locOk); document.getElementById('room-number-group').classList.toggle('hidden', !needsRoom); const roomOk = !needsRoom || (needsRoom && document.getElementById('room-number').value); const isDateVisible = !document.getElementById('date-picker-group').classList.contains('hidden'); const scheduleOk = isDateVisible ? document.getElementById('delivery-date').value : document.getElementById('delivery-time').value; document.getElementById('btn-step7').disabled = !(locOk && roomOk && scheduleOk); },
-            8: () => document.getElementById('btn-step8').disabled = !document.querySelector('input[name="payment-method"]:checked')
         };
         
         const resetCupBuilder = () => {
@@ -617,10 +619,76 @@
             }
         }
         
-        // --- 3. EVENT LISTENERS ---
+        // --- 3. EVENT LISTENERS E EXECUÇÃO ---
+
+        auth.onAuthStateChanged(async user => {
+            const formContent = document.getElementById('form-content');
+            const adminPanel = document.getElementById('admin-panel');
+            const myOrdersPanel = document.getElementById('my-orders-panel');
+            const phoneLoginForm = document.getElementById('phone-login-form');
+            const userLoggedInForm = document.getElementById('user-logged-in-form');
+            
+            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
+            dynamicButtons.forEach(btn => btn.remove());
+
+            if (user) {
+                const userRef = db.collection('users').doc(user.uid);
+                const userDoc = await userRef.get();
+                
+                if (user.phoneNumber === adminPhoneNumber) {
+                    showAdminPanel();
+                } else {
+                    showFormPanel();
+                    phoneLoginForm.classList.add('hidden');
+                    userLoggedInForm.classList.remove('hidden');
+                    
+                    if (userDoc.exists && userDoc.data().displayName) {
+                        const userName = userDoc.data().displayName;
+                        document.getElementById('fullName').value = userName;
+                        order.name = userName;
+                        validateStep[1]();
+                        nextStep();
+                    } else {
+                        showStep(1);
+                    }
+                }
+                
+                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
+                order.phone = user.phoneNumber;
+                
+                const logoutBtn = document.getElementById('logout-btn');
+                const buttonGroup = logoutBtn.parentNode;
+
+                if (user.phoneNumber === adminPhoneNumber) {
+                    const adminBtn = document.createElement('button');
+                    adminBtn.id = 'admin-btn';
+                    adminBtn.textContent = 'Gerenciar Pedidos';
+                    adminBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(adminBtn, logoutBtn);
+                    adminBtn.addEventListener('click', showAdminPanel);
+                } else {
+                    const myOrdersBtn = document.createElement('button');
+                    myOrdersBtn.id = 'my-orders-btn';
+                    myOrdersBtn.textContent = 'Meus Pedidos';
+                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
+                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
+                }
+
+            } else {
+                showFormPanel();
+                phoneLoginForm.classList.remove('hidden');
+                userLoggedInForm.classList.add('hidden');
+                order.name = '';
+                order.phone = '';
+                currentStep = 1; 
+                showStep(1);
+            }
+        });
         
         document.getElementById('back-to-form-btn').addEventListener('click', showFormPanel);
         document.getElementById('back-to-form-from-my-orders-btn').addEventListener('click', showFormPanel);
+        
         document.getElementById('send-code-btn').addEventListener('click', () => {
             const phoneInput = document.getElementById('phone');
             let phoneNumber = phoneInput.value.replace(/\D/g, ''); 
@@ -638,15 +706,18 @@
                     try { grecaptcha.reset(); document.getElementById('send-code-btn').disabled = true; } catch(e) { console.error("Erro ao resetar reCAPTCHA", e)}
                 });
         });
+
         document.getElementById('verify-code-btn').addEventListener('click', () => {
             const code = document.getElementById('verification-code').value;
             if (!window.confirmationResult || !code) return;
             window.confirmationResult.confirm(code).then((result) => { showToast('Login efetuado com sucesso!'); })
             .catch((error) => { console.error("Erro ao verificar código:", error); showToast('Código inválido. Tente novamente.'); });
         });
+
         document.getElementById('logout-btn').addEventListener('click', () => {
             auth.signOut().then(() => { showToast('Você saiu da sua conta.'); showFormPanel(); });
         });
+        
         document.getElementById('btn-step1').addEventListener('click', async () => {
             const user = auth.currentUser;
             const name = document.getElementById('fullName').value.trim();
@@ -657,8 +728,24 @@
             order.name = name;
             nextStep();
         });
+
+        document.getElementById('send-whatsapp').addEventListener('click', async (event) => {
+            event.preventDefault(); 
+            generateSummary();
+            const whatsappUrl = event.target.href;
+            try {
+                await saveOrderToFirestore();
+                showToast("Pedido salvo e pronto para enviar!");
+                window.open(whatsappUrl, '_blank');
+            } catch (error) {
+                showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
+                window.open(whatsappUrl, '_blank');
+            }
+        });
+        
         document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8)').forEach(btn => btn.addEventListener('click', nextStep));
         document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', prevStep));
+        
         document.getElementById('add-to-cart-btn').addEventListener('click', () => {
             saveCurrentAcaiData();
             order.cart.push(JSON.parse(JSON.stringify(currentAcai)));
@@ -680,9 +767,13 @@
             nextStep();
         });
         document.getElementById('form-content').addEventListener('input', e => { const s = e.target.closest('.step')?.id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); });
-        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date', 'payment-method'].forEach(id => { 
+        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date'].forEach(id => { 
             const el = document.getElementById(id);
-            if(el) el.addEventListener('change', e => { const s = e.target.closest('.step')?.id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
+            if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
+        });
+        document.getElementById('payment-method').addEventListener('change', e => { 
+            const s = e.target.closest('.step').id.split('-')[1]; 
+            if (s && validateStep[s]) validateStep[s](); 
         });
         document.querySelectorAll('.checkbox-group').forEach(g => { g.addEventListener('change', e => { const cbs = g.querySelectorAll('input[type=checkbox]'); const count = Array.from(cbs).filter(cb => cb.checked).length; if (g.hasAttribute('data-max')) { const max = parseInt(g.dataset.max, 10); if (count > max) e.target.checked = false; if (count === max) { if (g.id === 'creams-group') showToast('Dupla Perfeita! 🍦'); if (g.id === 'fruits-group') showToast('Seleção Saudável! 🍓');}} if (g.id === 'fruits-group' && count > 0 && !fruitToastShown) { showToast('Disponibilidade das frutas a confirmar via WhatsApp.'); fruitToastShown = true; } cbs.forEach(cb => cb.parentElement.classList.toggle('checked', cb.checked)); }); });
         const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
