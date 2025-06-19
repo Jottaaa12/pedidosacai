@@ -423,7 +423,7 @@
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
             if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `📍 *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `� *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            else { deliveryLine = `📍 *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
             summaryArray.push(deliveryLine);
 
             let paymentText = `💳 Pagamento: ${payment.method}${payment.info}`;
@@ -524,7 +524,7 @@
             showStep(currentStep);
         }
         
-        async function fetchAndDisplayAllOrders() {
+        function fetchAndDisplayAllOrders() {
             const ordersListDiv = document.getElementById('admin-orders-list');
             ordersListDiv.innerHTML = '<p>Carregando pedidos...</p>';
             db.collection('pedidos').orderBy('dataDoPedido', 'desc')
@@ -620,7 +620,72 @@
         }
         
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
+        
+        auth.onAuthStateChanged(async user => {
+            const formContent = document.getElementById('form-content');
+            const adminPanel = document.getElementById('admin-panel');
+            const myOrdersPanel = document.getElementById('my-orders-panel');
+            const phoneLoginForm = document.getElementById('phone-login-form');
+            const userLoggedInForm = document.getElementById('user-logged-in-form');
+            
+            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
+            dynamicButtons.forEach(btn => btn.remove());
 
+            if (user) {
+                const userRef = db.collection('users').doc(user.uid);
+                const userDoc = await userRef.get();
+                
+                if (user.phoneNumber === adminPhoneNumber) {
+                    showAdminPanel();
+                } else {
+                    showFormPanel();
+                    phoneLoginForm.classList.add('hidden');
+                    userLoggedInForm.classList.remove('hidden');
+                    
+                    if (userDoc.exists && userDoc.data().displayName) {
+                        const userName = userDoc.data().displayName;
+                        document.getElementById('fullName').value = userName;
+                        order.name = userName;
+                        validateStep[1]();
+                        nextStep();
+                    } else {
+                        showStep(1);
+                    }
+                }
+                
+                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
+                order.phone = user.phoneNumber;
+                
+                const logoutBtn = document.getElementById('logout-btn');
+                const buttonGroup = logoutBtn.parentNode;
+
+                if (user.phoneNumber === adminPhoneNumber) {
+                    const adminBtn = document.createElement('button');
+                    adminBtn.id = 'admin-btn';
+                    adminBtn.textContent = 'Gerenciar Pedidos';
+                    adminBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(adminBtn, logoutBtn);
+                    adminBtn.addEventListener('click', showAdminPanel);
+                } else {
+                    const myOrdersBtn = document.createElement('button');
+                    myOrdersBtn.id = 'my-orders-btn';
+                    myOrdersBtn.textContent = 'Meus Pedidos';
+                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
+                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
+                }
+
+            } else {
+                showFormPanel();
+                phoneLoginForm.classList.remove('hidden');
+                userLoggedInForm.classList.add('hidden');
+                order.name = '';
+                order.phone = '';
+                currentStep = 1; 
+                showStep(1);
+            }
+        });
+        
         document.getElementById('back-to-form-btn').addEventListener('click', showFormPanel);
         document.getElementById('back-to-form-from-my-orders-btn').addEventListener('click', showFormPanel);
         
@@ -705,13 +770,9 @@
             nextStep();
         });
         document.getElementById('form-content').addEventListener('input', e => { const s = e.target.closest('.step')?.id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); });
-        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date'].forEach(id => { 
+        ['size-group', 'syrup-group', 'delivery-location', 'delivery-time', 'delivery-date', 'payment-method'].forEach(id => { 
             const el = document.getElementById(id);
             if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
-        });
-        document.getElementById('payment-method').addEventListener('change', e => { 
-            const s = e.target.closest('.step').id.split('-')[1]; 
-            if (s && validateStep[s]) validateStep[s](); 
         });
         document.querySelectorAll('.checkbox-group').forEach(g => { g.addEventListener('change', e => { const cbs = g.querySelectorAll('input[type=checkbox]'); const count = Array.from(cbs).filter(cb => cb.checked).length; if (g.hasAttribute('data-max')) { const max = parseInt(g.dataset.max, 10); if (count > max) e.target.checked = false; if (count === max) { if (g.id === 'creams-group') showToast('Dupla Perfeita! 🍦'); if (g.id === 'fruits-group') showToast('Seleção Saudável! 🍓');}} if (g.id === 'fruits-group' && count > 0 && !fruitToastShown) { showToast('Disponibilidade das frutas a confirmar via WhatsApp.'); fruitToastShown = true; } cbs.forEach(cb => cb.parentElement.classList.toggle('checked', cb.checked)); }); });
         const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
@@ -727,71 +788,6 @@
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
 
         // --- 4. EXECUÇÃO INICIAL ---
-        auth.onAuthStateChanged(async user => {
-            const formContent = document.getElementById('form-content');
-            const adminPanel = document.getElementById('admin-panel');
-            const myOrdersPanel = document.getElementById('my-orders-panel');
-            const phoneLoginForm = document.getElementById('phone-login-form');
-            const userLoggedInForm = document.getElementById('user-logged-in-form');
-            
-            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
-            dynamicButtons.forEach(btn => btn.remove());
-
-            if (user) {
-                const userRef = db.collection('users').doc(user.uid);
-                const userDoc = await userRef.get();
-                
-                if (user.phoneNumber === adminPhoneNumber) {
-                    showAdminPanel();
-                } else {
-                    showFormPanel();
-                    phoneLoginForm.classList.add('hidden');
-                    userLoggedInForm.classList.remove('hidden');
-                    
-                    if (userDoc.exists && userDoc.data().displayName) {
-                        const userName = userDoc.data().displayName;
-                        document.getElementById('fullName').value = userName;
-                        order.name = userName;
-                        validateStep[1]();
-                        nextStep();
-                    } else {
-                        showStep(1);
-                    }
-                }
-                
-                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
-                order.phone = user.phoneNumber;
-                
-                const logoutBtn = document.getElementById('logout-btn');
-                const buttonGroup = logoutBtn.parentNode;
-
-                if (user.phoneNumber === adminPhoneNumber) {
-                    const adminBtn = document.createElement('button');
-                    adminBtn.id = 'admin-btn';
-                    adminBtn.textContent = 'Gerenciar Pedidos';
-                    adminBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(adminBtn, logoutBtn);
-                    adminBtn.addEventListener('click', showAdminPanel);
-                } else {
-                    const myOrdersBtn = document.createElement('button');
-                    myOrdersBtn.id = 'my-orders-btn';
-                    myOrdersBtn.textContent = 'Meus Pedidos';
-                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
-                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
-                }
-
-            } else {
-                showFormPanel();
-                phoneLoginForm.classList.remove('hidden');
-                userLoggedInForm.classList.add('hidden');
-                order.name = '';
-                order.phone = '';
-                currentStep = 1; 
-                showStep(1);
-            }
-        });
-        
         showStep(currentStep);
         renderRecaptcha();
     });
