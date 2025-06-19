@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!-- CORREÇÃO: Meta charset padronizado para o formato curto. -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedido de Açaí - Sabor da Terra</title>
@@ -219,14 +218,11 @@
             <!-- Etapa 1: Login/Identificação -->
             <div id="step-1" class="step active">
                 <div class="main-header">
-                    <!-- ACESSIBILIDADE: Adicionado `alt` descritivo para a imagem do logo. -->
                     <img src="https://i.imgur.com/9VzcNVM.png" alt="Logo do Açaí Sabor da Terra" class="logo">
-                    <!-- SEMÂNTICA: Título principal alterado para `<h1>` para melhor estrutura semântica. -->
                     <h1>Açaí Sabor da Terra</h1>
                     <p><a href="https://instagram.com/acaisabordaterra_" target="_blank" rel="noopener noreferrer">@acaisabordaterra_</a></p>
                 </div>
 
-                <!-- ATUALIZAÇÃO: Container para os dois tipos de login -->
                 <div id="login-options-container">
                     <!-- Formulário de Login com Telefone (padrão) -->
                     <div id="phone-login-container">
@@ -237,18 +233,18 @@
                             </div>
                             <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
                             <div class="button-group" style="justify-content: center;">
-                                <button id="send-code-btn" disabled>Enviar SMS de Verificação</button>
+                                <button type="button" id="send-code-btn" disabled>Enviar SMS de Verificação</button>
                             </div>
                             <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
                                 <label for="verification-code">Código de verificação</label>
                                 <input type="text" id="verification-code" placeholder="******" autocomplete="one-time-code">
                                 <div class="button-group" style="justify-content: center;">
-                                    <button id="verify-code-btn">Confirmar e Entrar</button>
+                                    <button type="button" id="verify-code-btn">Confirmar e Entrar</button>
                                 </div>
                             </div>
                         </div>
                         <div class="button-group" style="justify-content: center; margin-top: 10px;">
-                             <button id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
+                             <button type="button" id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
                         </div>
                     </div>
                     
@@ -256,15 +252,16 @@
                     <div id="quick-order-form" class="hidden">
                         <div class="form-group">
                             <label for="quick-fullName">Seu nome</label>
-                            <input type="text" id="quick-fullName" placeholder="Digite seu nome" autocomplete="name">
+                            <input type="text" id="quick-fullName" placeholder="Digite seu nome completo" autocomplete="name">
                         </div>
                         <div class="form-group">
                             <label for="quick-phone">Seu telefone (com DDD)</label>
                             <input type="tel" id="quick-phone" placeholder="Ex: 88912345678" autocomplete="tel">
                         </div>
                         <div class="button-group">
-                            <button id="back-to-login-btn" class="back-btn">Voltar para Login</button>
-                            <button id="quick-order-submit-btn" class="next-btn" disabled>Continuar Pedido</button>
+                            <!-- CORREÇÃO: Removida classe 'js-back-btn' para que use apenas seu listener específico -->
+                            <button type="button" id="back-to-login-btn" class="back-btn">Voltar para Login</button>
+                            <button type="button" id="quick-order-submit-btn" class="next-btn" disabled>Continuar Pedido</button>
                         </div>
                     </div>
                 </div>
@@ -278,28 +275,29 @@
                     </div>
                     <div class="button-group">
                         <!-- Botões dinâmicos (Admin, Meus Pedidos) serão inseridos aqui -->
-                        <button id="logout-btn" class="back-btn">Sair</button>
-                        <button id="btn-step1" class="next-btn" disabled>Iniciar Pedido</button>
+                        <!-- CORREÇÃO: Removida classe 'js-back-btn' para que use apenas seu listener específico -->
+                        <button type="button" id="logout-btn" class="back-btn">Sair</button>
+                        <button type="button" id="btn-step1" class="next-btn" disabled>Iniciar Pedido</button>
                     </div>
                 </div>
             </div>
 
             <!-- Etapas do formulário (2 a 9) -->
-            <div id="step-2" class="step"><div class="step-header"><h2>📦 Escolha o tamanho</h2></div><div id="size-group" class="radio-group"><label class="choice-item"><input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 300g – R$ 15,00</label><label class="choice-item"><input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 360g – R$ 18,00</label><label class="choice-item"><input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 400g – R$ 20,00</label><label class="choice-item"><input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 440g – R$ 22,00</label><label class="choice-item"><input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 500g – R$ 25,00</label><label class="choice-item"><input type="radio" name="size" value="custom"> Outro valor</label></div><div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;"><label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label><input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30"><p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step2" class="next-btn" disabled>Próximo</button></div></div>
-            <div id="step-3" class="step"><div class="step-header"><h2>🍦 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="creams-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="creme" value="Creme de maracujá"> Creme de maracujá</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de morango"> Creme de morango</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de ninho"> Creme de ninho</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de cupuaçu"> Creme de cupuaçu</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <div id="step-4" class="step"><div class="step-header"><h2>🥣 Acompanhamentos</h2><button class="action-btn surprise-btn">✨ Surpreenda-me!</button><button class="action-btn clear-btn">Limpar</button></div><div id="topping-info">Você tem 4 acompanhamentos grátis.</div><div id="toppings-group" class="checkbox-group"><label class="choice-item"><input type="checkbox" name="topping" value="Leite em pó"> Leite em pó</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha Caramelizada"> Castanha Caramelizada</label><label class="choice-item"><input type="checkbox" name="topping" value="Granola"> Granola</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha"> Castanha</label><label class="choice-item"><input type="checkbox" name="topping" value="Gotas de Chocolate"> Gotas de Chocolate</label><label class="choice-item"><input type="checkbox" name="topping" value="Paçoquita"> Paçoquita</label><label class="choice-item"><input type="checkbox" name="topping" value="Amendoim"> Amendoim</label><label class="choice-item"><input type="checkbox" name="topping" value="Chocoball"> Chocoball</label><label class="choice-item"><input type="checkbox" name="topping" value="Canudinho Biju"> Canudinho Biju</label><label class="choice-item"><input type="checkbox" name="topping" value="Cereja"> Cereja</label><label class="choice-item"><input type="checkbox" name="topping" value="Sucrilhos"> Sucrilhos</label><label class="choice-item"><input type="checkbox" name="topping" value="M&M"> M&M</label><label class="choice-item"><input type="checkbox" name="topping" value="Ovomaltine"> Ovomaltine</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Branco"> Cookies Branco</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Preto"> Cookies Preto</label><label class="choice-item"><input type="checkbox" name="topping" value="Farinha de tapioca"> Farinha de tapioca</label></div><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <div id="step-5" class="step"><div class="step-header"><h2>🍓 Escolha até 2</h2><button class="action-btn clear-btn">Limpar</button></div><div id="fruits-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="fruit" value="Morango"> Morango</label><label class="choice-item"><input type="checkbox" name="fruit" value="Kiwi"> Kiwi</label><label class="choice-item"><input type="checkbox" name="fruit" value="Uva"> Uva</label></div><p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p><div class="button-group"><button class="back-btn">Voltar</button><button class="next-btn">Próximo</button></div></div>
-            <div id="step-6" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button class="back-btn">Voltar</button><button id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
-            <div id="step-7" class="step"><div class="step-header"><h2>📍 Local e Horário</h2></div><div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div><div class="form-group"><label for="delivery-location">Local de entrega</label><select id="delivery-location"><option value="" disabled selected>Selecione</option><option value="Bloco A">Bloco A</option><option value="Bloco B">Bloco B</option><option value="Bloco C">Bloco C</option><option value="Bloco D">Bloco D</option><option value="Onibus BITU">Onibus BITU</option><option value="Cantina da Nassau">Cantina da Nassau</option><option value="Restaurante Dunas">Restaurante Dunas</option></select><p id="bitu-bus-note" class="disclaimer-note hidden">Atenção, essa escolha é exclusivo para o onibus de bitupita.</p></div><div id="room-number-group" class="form-group hidden"><label for="room-number">Número da sala</label><input type="text" id="room-number"></div><div id="time-picker-group" class="form-group"><label for="delivery-time">Horário de entrega (hoje)</label><select id="delivery-time"><option value="" disabled selected>Selecione</option><option value="18h00">18h00</option><option value="19h00">19h00</option><option value="20h00">20h00</option><option value="21h00">21h00</option></select></div><div id="date-picker-group" class="form-group hidden"><label for="delivery-date">Escolha a data da entrega</label><input type="date" id="delivery-date"></div><p class="disclaimer-note">A data/horário é flexível e está sujeita a confirmação via WhatsApp.</p><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step7" class="next-btn" disabled>Próximo</button></div></div>
-            <div id="step-8" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button class="back-btn">Voltar</button><button id="btn-step8" class="next-btn" disabled>Ver Resumo</button></div></div>
-            <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group" style="justify-content:center;"><button class="back-btn" style="flex: 1;">Corrigir</button><a id="send-whatsapp" href="#" target="_blank" style="flex: 2;">Enviar e Salvar Pedido</a></div></div>
+            <div id="step-2" class="step"><div class="step-header"><h2>📦 Escolha o tamanho</h2></div><div id="size-group" class="radio-group"><label class="choice-item"><input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 300g – R$ 15,00</label><label class="choice-item"><input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 360g – R$ 18,00</label><label class="choice-item"><input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 400g – R$ 20,00</label><label class="choice-item"><input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 440g – R$ 22,00</label><label class="choice-item"><input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 500g – R$ 25,00</label><label class="choice-item"><input type="radio" name="size" value="custom"> Outro valor</label></div><div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;"><label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label><input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30"><p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="btn-step2" class="next-btn" disabled>Próximo</button></div></div>
+            <div id="step-3" class="step"><div class="step-header"><h2>🍦 Escolha até 2</h2><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="creams-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="creme" value="Creme de maracujá"> Creme de maracujá</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de morango"> Creme de morango</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de ninho"> Creme de ninho</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de cupuaçu"> Creme de cupuaçu</label></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
+            <div id="step-4" class="step"><div class="step-header"><h2>🥣 Acompanhamentos</h2><button type="button" class="action-btn surprise-btn">✨ Surpreenda-me!</button><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="topping-info">Você tem 4 acompanhamentos grátis.</div><div id="toppings-group" class="checkbox-group"><label class="choice-item"><input type="checkbox" name="topping" value="Leite em pó"> Leite em pó</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha Caramelizada"> Castanha Caramelizada</label><label class="choice-item"><input type="checkbox" name="topping" value="Granola"> Granola</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha"> Castanha</label><label class="choice-item"><input type="checkbox" name="topping" value="Gotas de Chocolate"> Gotas de Chocolate</label><label class="choice-item"><input type="checkbox" name="topping" value="Paçoquita"> Paçoquita</label><label class="choice-item"><input type="checkbox" name="topping" value="Amendoim"> Amendoim</label><label class="choice-item"><input type="checkbox" name="topping" value="Chocoball"> Chocoball</label><label class="choice-item"><input type="checkbox" name="topping" value="Canudinho Biju"> Canudinho Biju</label><label class="choice-item"><input type="checkbox" name="topping" value="Cereja"> Cereja</label><label class="choice-item"><input type="checkbox" name="topping" value="Sucrilhos"> Sucrilhos</label><label class="choice-item"><input type="checkbox" name="topping" value="M&M"> M&M</label><label class="choice-item"><input type="checkbox" name="topping" value="Ovomaltine"> Ovomaltine</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Branco"> Cookies Branco</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Preto"> Cookies Preto</label><label class="choice-item"><input type="checkbox" name="topping" value="Farinha de tapioca"> Farinha de tapioca</label></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
+            <div id="step-5" class="step"><div class="step-header"><h2>🍓 Escolha até 2</h2><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="fruits-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="fruit" value="Morango"> Morango</label><label class="choice-item"><input type="checkbox" name="fruit" value="Kiwi"> Kiwi</label><label class="choice-item"><input type="checkbox" name="fruit" value="Uva"> Uva</label></div><p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
+            <div id="step-6" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
+            <div id="step-7" class="step"><div class="step-header"><h2>📍 Local e Horário</h2></div><div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div><div class="form-group"><label for="delivery-location">Local de entrega</label><select id="delivery-location"><option value="" disabled selected>Selecione</option><option value="Bloco A">Bloco A</option><option value="Bloco B">Bloco B</option><option value="Bloco C">Bloco C</option><option value="Bloco D">Bloco D</option><option value="Onibus BITU">Onibus BITU</option><option value="Cantina da Nassau">Cantina da Nassau</option><option value="Restaurante Dunas">Restaurante Dunas</option></select><p id="bitu-bus-note" class="disclaimer-note hidden">Atenção, essa escolha é exclusivo para o onibus de bitupita.</p></div><div id="room-number-group" class="form-group hidden"><label for="room-number">Número da sala</label><input type="text" id="room-number"></div><div id="time-picker-group" class="form-group"><label for="delivery-time">Horário de entrega (hoje)</label><select id="delivery-time"><option value="" disabled selected>Selecione</option><option value="18h00">18h00</option><option value="19h00">19h00</option><option value="20h00">20h00</option><option value="21h00">21h00</option></select></div><div id="date-picker-group" class="form-group hidden"><label for="delivery-date">Escolha a data da entrega</label><input type="date" id="delivery-date"></div><p class="disclaimer-note">A data/horário é flexível e está sujeita a confirmação via WhatsApp.</p><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="btn-step7" class="next-btn" disabled>Próximo</button></div></div>
+            <div id="step-8" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button type="button" id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button type="button" id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="btn-step8" class="next-btn" disabled>Ver Resumo</button></div></div>
+            <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group" style="justify-content:center;"><button type="button" class="back-btn js-back-btn" style="flex: 1;">Corrigir</button><a id="send-whatsapp" href="#" target="_blank" style="flex: 2;">Enviar e Salvar Pedido</a></div></div>
         </div>
         
         <!-- PAINEL DE ADMIN -->
         <div id="admin-panel" class="hidden">
             <div class="step-header">
                 <h2>📋 Gerenciamento de Pedidos</h2>
-                <button id="back-to-form-btn" class="action-btn">Voltar ao Formulário</button>
+                <button type="button" id="back-to-form-btn" class="action-btn">Voltar ao Formulário</button>
             </div>
             <div id="admin-orders-list">
                 <p>Carregando pedidos...</p>
@@ -310,7 +308,7 @@
         <div id="my-orders-panel" class="hidden">
             <div class="step-header">
                 <h2>🍧 Meus Pedidos Anteriores</h2>
-                <button id="back-to-form-from-my-orders-btn" class="action-btn">Voltar</button>
+                <button type="button" id="back-to-form-from-my-orders-btn" class="action-btn">Voltar</button>
             </div>
             <div id="my-orders-list">
                 <p>Carregando seus pedidos...</p>
@@ -321,9 +319,9 @@
     </div>
     
     <!-- Modais -->
-    <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button id="modal-pix-close">Fechar</button></div></div>
-    <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button id="add-another-btn">Montar Outro Copo</button><button id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
-    <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button id="modal-finalize-close">Entendi!</button></div></div>
+    <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button type="button" id="modal-pix-close">Fechar</button></div></div>
+    <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button type="button" id="add-another-btn">Montar Outro Copo</button><button type="button" id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
+    <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button type="button" id="modal-finalize-close">Entendi!</button></div></div>
 
     <!-- Script de Configuração do Firebase -->
     <script>
@@ -401,8 +399,8 @@
             if (stepNumber === 9) document.getElementById('modal-finalize').classList.add('show');
         };
         
-        const nextStep = () => { currentStep++; showStep(currentStep); };
-        const prevStep = () => { currentStep = (currentStep === 2 && auth.currentUser) ? 1 : currentStep - 1; showStep(currentStep); };
+        const nextStep = () => { if(currentStep < 9) { currentStep++; showStep(currentStep); } };
+        const prevStep = () => { if(currentStep > 1) { currentStep--; showStep(currentStep); } };
         const getCheckedValues = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
 
         const crc16 = (payload) => {
@@ -461,7 +459,7 @@
         const generateSummary = () => {
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
-            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* �', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
+            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* 🍧', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
             
             cart.forEach((item, index) => {
                 summaryArray.push(`*COPO ${index + 1}*`);
@@ -544,7 +542,7 @@
                 };
             } else {
                  pedidoParaSalvar = {
-                    clienteId: null,
+                    clienteId: null, // Pedido rápido sem login
                     clienteNome: order.name,
                     clienteTelefone: order.phone,
                     dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
@@ -595,49 +593,49 @@
             ordersListDiv.innerHTML = '<p>Carregando pedidos...</p>';
             db.collection('pedidos').orderBy('dataDoPedido', 'desc')
               .onSnapshot(querySnapshot => {
-                if (querySnapshot.empty) {
-                    ordersListDiv.innerHTML = '<p>Nenhum pedido encontrado.</p>';
-                    return;
-                }
-                ordersListDiv.innerHTML = '';
-                querySnapshot.forEach(doc => {
-                    const orderData = doc.data();
-                    const orderCard = document.createElement('div');
-                    orderCard.className = 'admin-order-card';
-                    const pedidoDate = orderData.dataDoPedido ? orderData.dataDoPedido.toDate() : new Date();
-                    const formattedDate = pedidoDate.toLocaleDateString('pt-BR') + ' às ' + pedidoDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                    let itemsHtml = '';
-                    orderData.carrinho.forEach((item, index) => {
-                        itemsHtml += `<p><strong>Copo ${index + 1}:</strong> ${item.size.name}</p>`;
-                    });
-                    let detalhesCopo = '';
-                    if (orderData.carrinho && orderData.carrinho[0]) {
-                        const primeiroCopo = orderData.carrinho[0];
-                        if (primeiroCopo.creams && primeiroCopo.creams.length > 0) detalhesCopo += `<p><strong>Cremes:</strong> ${primeiroCopo.creams.join(', ')}</p>`;
-                        if (primeiroCopo.toppings && primeiroCopo.toppings.length > 0) detalhesCopo += `<p><strong>Acompanhamentos:</strong> ${primeiroCopo.toppings.join(', ')}</p>`;
-                        if (primeiroCopo.fruits && primeiroCopo.fruits.length > 0) detalhesCopo += `<p><strong>Frutas:</strong> ${primeiroCopo.fruits.join(', ')}</p>`;
-                        if (primeiroCopo.syrup && primeiroCopo.syrup !== 'Sem cobertura') detalhesCopo += `<p><strong>Cobertura:</strong> ${primeiroCopo.syrup}</p>`;
-                    }
-                    orderCard.innerHTML = `<h3>Pedido de: ${orderData.clienteNome || 'Nome não informado'}</h3> <p><strong>Telefone:</strong> ${orderData.clienteTelefone}</p> <p><strong>Data:</strong> ${formattedDate}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)} (${orderData.pagamento.method})</p> <div class="order-items">${itemsHtml}${detalhesCopo}</div> <div class="order-status-group"> <label for="status-${doc.id}" style="margin-bottom:0;">Status:</label> <select id="status-${doc.id}"> <option value="Recebido" ${orderData.status === 'Recebido' ? 'selected' : ''}>Recebido</option> <option value="Em preparo" ${orderData.status === 'Em preparo' ? 'selected' : ''}>Em preparo</option> <option value="Saiu para entrega" ${orderData.status === 'Saiu para entrega' ? 'selected' : ''}>Saiu para entrega</option> <option value="Finalizado" ${orderData.status === 'Finalizado' ? 'selected' : ''}>Finalizado</option> <option value="Cancelado" ${orderData.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option> </select> <button class="save-status-btn" data-id="${doc.id}">Salvar</button> </div>`;
-                    ordersListDiv.appendChild(orderCard);
-                });
-                document.querySelectorAll('.save-status-btn').forEach(button => {
-                    button.addEventListener('click', async (e) => {
-                        const orderId = e.target.dataset.id;
-                        const newStatus = document.getElementById(`status-${orderId}`).value;
-                        try {
-                            await db.collection('pedidos').doc(orderId).update({ status: newStatus });
-                            showToast('Status do pedido atualizado!');
-                        } catch (error) {
-                            showToast('Erro ao atualizar status.');
-                            console.error("Erro ao atualizar status:", error);
-                        }
-                    });
-                });
-            }, error => {
-                console.error("Erro ao buscar pedidos em tempo real: ", error);
-                ordersListDiv.innerHTML = '<p>Erro ao carregar pedidos. Verifique o console.</p>';
-            });
+                  if (querySnapshot.empty) {
+                      ordersListDiv.innerHTML = '<p>Nenhum pedido encontrado.</p>';
+                      return;
+                  }
+                  ordersListDiv.innerHTML = '';
+                  querySnapshot.forEach(doc => {
+                      const orderData = doc.data();
+                      const orderCard = document.createElement('div');
+                      orderCard.className = 'admin-order-card';
+                      const pedidoDate = orderData.dataDoPedido ? orderData.dataDoPedido.toDate() : new Date();
+                      const formattedDate = pedidoDate.toLocaleDateString('pt-BR') + ' às ' + pedidoDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                      let itemsHtml = '';
+                      orderData.carrinho.forEach((item, index) => {
+                          itemsHtml += `<p><strong>Copo ${index + 1}:</strong> ${item.size.name}</p>`;
+                      });
+                      let detalhesCopo = '';
+                      if (orderData.carrinho && orderData.carrinho[0]) {
+                          const primeiroCopo = orderData.carrinho[0];
+                          if (primeiroCopo.creams && primeiroCopo.creams.length > 0) detalhesCopo += `<p><strong>Cremes:</strong> ${primeiroCopo.creams.join(', ')}</p>`;
+                          if (primeiroCopo.toppings && primeiroCopo.toppings.length > 0) detalhesCopo += `<p><strong>Acompanhamentos:</strong> ${primeiroCopo.toppings.join(', ')}</p>`;
+                          if (primeiroCopo.fruits && primeiroCopo.fruits.length > 0) detalhesCopo += `<p><strong>Frutas:</strong> ${primeiroCopo.fruits.join(', ')}</p>`;
+                          if (primeiroCopo.syrup && primeiroCopo.syrup !== 'Sem cobertura') detalhesCopo += `<p><strong>Cobertura:</strong> ${primeiroCopo.syrup}</p>`;
+                      }
+                      orderCard.innerHTML = `<h3>Pedido de: ${orderData.clienteNome || 'Nome não informado'}</h3> <p><strong>Telefone:</strong> ${orderData.clienteTelefone}</p> <p><strong>Data:</strong> ${formattedDate}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)} (${orderData.pagamento.method})</p> <div class="order-items">${itemsHtml}${detalhesCopo}</div> <div class="order-status-group"> <label for="status-${doc.id}" style="margin-bottom:0;">Status:</label> <select id="status-${doc.id}"> <option value="Recebido" ${orderData.status === 'Recebido' ? 'selected' : ''}>Recebido</option> <option value="Em preparo" ${orderData.status === 'Em preparo' ? 'selected' : ''}>Em preparo</option> <option value="Saiu para entrega" ${orderData.status === 'Saiu para entrega' ? 'selected' : ''}>Saiu para entrega</option> <option value="Finalizado" ${orderData.status === 'Finalizado' ? 'selected' : ''}>Finalizado</option> <option value="Cancelado" ${orderData.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option> </select> <button type="button" class="save-status-btn" data-id="${doc.id}">Salvar</button> </div>`;
+                      ordersListDiv.appendChild(orderCard);
+                  });
+                  document.querySelectorAll('.save-status-btn').forEach(button => {
+                      button.addEventListener('click', async (e) => {
+                          const orderId = e.target.dataset.id;
+                          const newStatus = document.getElementById(`status-${orderId}`).value;
+                          try {
+                              await db.collection('pedidos').doc(orderId).update({ status: newStatus });
+                              showToast('Status do pedido atualizado!');
+                          } catch (error) {
+                              showToast('Erro ao atualizar status.');
+                              console.error("Erro ao atualizar status:", error);
+                          }
+                      });
+                  });
+              }, error => {
+                  console.error("Erro ao buscar pedidos em tempo real: ", error);
+                  ordersListDiv.innerHTML = '<p>Erro ao carregar pedidos. Verifique o console.</p>';
+              });
         }
         
         async function fetchAndDisplayMyOrders() {
@@ -660,7 +658,7 @@
                     orderCard.className = 'my-order-card';
                     const pedidoDate = orderData.dataDoPedido.toDate();
                     const formattedDate = pedidoDate.toLocaleDateString('pt-BR');
-                    orderCard.innerHTML = `<h3>Pedido de ${formattedDate}</h3> <p><strong>Status:</strong> ${orderData.status || 'Recebido'}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)}</p> <div class="my-order-actions"> <button class="repeat-order-btn">Repetir Pedido</button> <button class="edit-order-btn">Editar e Repetir</button> </div>`;
+                    orderCard.innerHTML = `<h3>Pedido de ${formattedDate}</h3> <p><strong>Status:</strong> ${orderData.status || 'Recebido'}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)}</p> <div class="my-order-actions"> <button type="button" class="repeat-order-btn">Repetir Pedido</button> <button type="button" class="edit-order-btn">Editar e Repetir</button> </div>`;
                     orderCard.querySelector('.repeat-order-btn').addEventListener('click', () => {
                         order.cart = orderData.carrinho;
                         updateCartIndicator();
@@ -711,9 +709,6 @@
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
         
         auth.onAuthStateChanged(async user => {
-            const formContent = document.getElementById('form-content');
-            const adminPanel = document.getElementById('admin-panel');
-            const myOrdersPanel = document.getElementById('my-orders-panel');
             const phoneLoginContainer = document.getElementById('phone-login-container');
             const quickOrderForm = document.getElementById('quick-order-form');
             const userLoggedInForm = document.getElementById('user-logged-in-form');
@@ -757,6 +752,7 @@
                 if (user.phoneNumber === adminPhoneNumber) {
                     const adminBtn = document.createElement('button');
                     adminBtn.id = 'admin-btn';
+                    adminBtn.type = 'button';
                     adminBtn.textContent = 'Gerenciar Pedidos';
                     adminBtn.classList.add('action-btn', 'dynamic-btn');
                     buttonGroup.insertBefore(adminBtn, logoutBtn);
@@ -764,6 +760,7 @@
                 } else {
                     const myOrdersBtn = document.createElement('button');
                     myOrdersBtn.id = 'my-orders-btn';
+                    myOrdersBtn.type = 'button';
                     myOrdersBtn.textContent = 'Meus Pedidos';
                     myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
                     buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
@@ -771,7 +768,7 @@
                 }
 
             } else {
-                // CORREÇÃO: Só reseta a view se não estiver no fluxo de pedido rápido
+                // Se não estiver no fluxo de pedido rápido, reseta para a tela de login.
                 if (!isQuickOrder) {
                     showFormPanel();
                     phoneLoginContainer.classList.remove('hidden');
@@ -846,8 +843,9 @@
             }
         });
         
+        // CORREÇÃO: Listener de 'voltar' agora usa a classe 'js-back-btn' para evitar conflitos
+        document.querySelectorAll('.js-back-btn').forEach(btn => btn.addEventListener('click', prevStep));
         document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8):not(#quick-order-submit-btn)').forEach(btn => btn.addEventListener('click', nextStep));
-        document.querySelectorAll('.back-btn').forEach(btn => btn.addEventListener('click', prevStep));
         
         document.getElementById('add-to-cart-btn').addEventListener('click', () => {
             saveCurrentAcaiData();
@@ -949,23 +947,23 @@
         showQuickOrderBtn.addEventListener('click', () => {
             phoneLoginContainer.classList.add('hidden');
             quickOrderForm.classList.remove('hidden');
-            // CORREÇÃO: Esconde o reCAPTCHA para não interferir
             document.getElementById('recaptcha-container').style.display = 'none';
         });
 
         backToLoginBtn.addEventListener('click', () => {
             quickOrderForm.classList.add('hidden');
             phoneLoginContainer.classList.remove('hidden');
-             // CORREÇÃO: Mostra o reCAPTCHA novamente
             document.getElementById('recaptcha-container').style.display = 'flex';
         });
 
         quickOrderForm.addEventListener('input', () => {
-            quickOrderSubmitBtn.disabled = !(quickFullNameInput.value && quickPhoneInput.value.length > 9);
+            const isNameValid = quickFullNameInput.value.trim().length > 2;
+            const isPhoneValid = quickPhoneInput.value.replace(/\D/g, '').length >= 10;
+            quickOrderSubmitBtn.disabled = !(isNameValid && isPhoneValid);
         });
 
         quickOrderSubmitBtn.addEventListener('click', () => {
-            isQuickOrder = true; // ATUALIZAÇÃO: Sinaliza que estamos no fluxo de pedido rápido
+            isQuickOrder = true; // Sinaliza que estamos no fluxo de pedido rápido
             order.name = quickFullNameInput.value.trim();
             order.phone = quickPhoneInput.value.trim();
             order.clienteId = null; 
@@ -974,7 +972,12 @@
 
         // --- 4. EXECUÇÃO INICIAL ---
         showStep(currentStep);
-        renderRecaptcha();
+        try {
+            renderRecaptcha();
+        } catch(e) {
+            console.error("Falha ao renderizar reCAPTCHA. Pode ser um problema de conexão ou bloqueador de anúncios.", e);
+            showToast("Não foi possível carregar o verificador de SMS.");
+        }
     });
     </script>
 </body>
