@@ -423,7 +423,7 @@
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
             if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `📍 *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `📍 *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            else { deliveryLine = `� *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
             summaryArray.push(deliveryLine);
 
             let paymentText = `💳 Pagamento: ${payment.method}${payment.info}`;
@@ -621,71 +621,6 @@
         
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
 
-        auth.onAuthStateChanged(async user => {
-            const formContent = document.getElementById('form-content');
-            const adminPanel = document.getElementById('admin-panel');
-            const myOrdersPanel = document.getElementById('my-orders-panel');
-            const phoneLoginForm = document.getElementById('phone-login-form');
-            const userLoggedInForm = document.getElementById('user-logged-in-form');
-            
-            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
-            dynamicButtons.forEach(btn => btn.remove());
-
-            if (user) {
-                const userRef = db.collection('users').doc(user.uid);
-                const userDoc = await userRef.get();
-                
-                if (user.phoneNumber === adminPhoneNumber) {
-                    showAdminPanel();
-                } else {
-                    showFormPanel();
-                    phoneLoginForm.classList.add('hidden');
-                    userLoggedInForm.classList.remove('hidden');
-                    
-                    if (userDoc.exists && userDoc.data().displayName) {
-                        const userName = userDoc.data().displayName;
-                        document.getElementById('fullName').value = userName;
-                        order.name = userName;
-                        validateStep[1]();
-                        nextStep();
-                    } else {
-                        showStep(1);
-                    }
-                }
-                
-                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
-                order.phone = user.phoneNumber;
-                
-                const logoutBtn = document.getElementById('logout-btn');
-                const buttonGroup = logoutBtn.parentNode;
-
-                if (user.phoneNumber === adminPhoneNumber) {
-                    const adminBtn = document.createElement('button');
-                    adminBtn.id = 'admin-btn';
-                    adminBtn.textContent = 'Gerenciar Pedidos';
-                    adminBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(adminBtn, logoutBtn);
-                    adminBtn.addEventListener('click', showAdminPanel);
-                } else {
-                    const myOrdersBtn = document.createElement('button');
-                    myOrdersBtn.id = 'my-orders-btn';
-                    myOrdersBtn.textContent = 'Meus Pedidos';
-                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
-                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
-                }
-
-            } else {
-                showFormPanel();
-                phoneLoginForm.classList.remove('hidden');
-                userLoggedInForm.classList.add('hidden');
-                order.name = '';
-                order.phone = '';
-                currentStep = 1; 
-                showStep(1);
-            }
-        });
-        
         document.getElementById('back-to-form-btn').addEventListener('click', showFormPanel);
         document.getElementById('back-to-form-from-my-orders-btn').addEventListener('click', showFormPanel);
         
@@ -710,7 +645,10 @@
         document.getElementById('verify-code-btn').addEventListener('click', () => {
             const code = document.getElementById('verification-code').value;
             if (!window.confirmationResult || !code) return;
-            window.confirmationResult.confirm(code).then((result) => { showToast('Login efetuado com sucesso!'); })
+            window.confirmationResult.confirm(code).then((result) => { 
+                showToast('Login efetuado com sucesso!'); 
+                // A lógica de `onAuthStateChanged` vai tratar o resto
+            })
             .catch((error) => { console.error("Erro ao verificar código:", error); showToast('Código inválido. Tente novamente.'); });
         });
 
@@ -789,6 +727,71 @@
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
 
         // --- 4. EXECUÇÃO INICIAL ---
+        auth.onAuthStateChanged(async user => {
+            const formContent = document.getElementById('form-content');
+            const adminPanel = document.getElementById('admin-panel');
+            const myOrdersPanel = document.getElementById('my-orders-panel');
+            const phoneLoginForm = document.getElementById('phone-login-form');
+            const userLoggedInForm = document.getElementById('user-logged-in-form');
+            
+            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
+            dynamicButtons.forEach(btn => btn.remove());
+
+            if (user) {
+                const userRef = db.collection('users').doc(user.uid);
+                const userDoc = await userRef.get();
+                
+                if (user.phoneNumber === adminPhoneNumber) {
+                    showAdminPanel();
+                } else {
+                    showFormPanel();
+                    phoneLoginForm.classList.add('hidden');
+                    userLoggedInForm.classList.remove('hidden');
+                    
+                    if (userDoc.exists && userDoc.data().displayName) {
+                        const userName = userDoc.data().displayName;
+                        document.getElementById('fullName').value = userName;
+                        order.name = userName;
+                        validateStep[1]();
+                        nextStep();
+                    } else {
+                        showStep(1);
+                    }
+                }
+                
+                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
+                order.phone = user.phoneNumber;
+                
+                const logoutBtn = document.getElementById('logout-btn');
+                const buttonGroup = logoutBtn.parentNode;
+
+                if (user.phoneNumber === adminPhoneNumber) {
+                    const adminBtn = document.createElement('button');
+                    adminBtn.id = 'admin-btn';
+                    adminBtn.textContent = 'Gerenciar Pedidos';
+                    adminBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(adminBtn, logoutBtn);
+                    adminBtn.addEventListener('click', showAdminPanel);
+                } else {
+                    const myOrdersBtn = document.createElement('button');
+                    myOrdersBtn.id = 'my-orders-btn';
+                    myOrdersBtn.textContent = 'Meus Pedidos';
+                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
+                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
+                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
+                }
+
+            } else {
+                showFormPanel();
+                phoneLoginForm.classList.remove('hidden');
+                userLoggedInForm.classList.add('hidden');
+                order.name = '';
+                order.phone = '';
+                currentStep = 1; 
+                showStep(1);
+            }
+        });
+        
         showStep(currentStep);
         renderRecaptcha();
     });
