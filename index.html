@@ -244,7 +244,7 @@
                             </div>
                         </div>
                         <div class="button-group" style="justify-content: center; margin-top: 10px;">
-                             <button type="button" id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
+                               <button type="button" id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
                         </div>
                     </div>
                     
@@ -259,7 +259,6 @@
                             <input type="tel" id="quick-phone" placeholder="Ex: 88912345678" autocomplete="tel">
                         </div>
                         <div class="button-group">
-                            <!-- CORREÇÃO: Removida classe 'js-back-btn' para que use apenas seu listener específico -->
                             <button type="button" id="back-to-login-btn" class="back-btn">Voltar para Login</button>
                             <button type="button" id="quick-order-submit-btn" class="next-btn" disabled>Continuar Pedido</button>
                         </div>
@@ -274,8 +273,6 @@
                         <input type="text" id="fullName" autocomplete="name">
                     </div>
                     <div class="button-group">
-                        <!-- Botões dinâmicos (Admin, Meus Pedidos) serão inseridos aqui -->
-                        <!-- CORREÇÃO: Removida classe 'js-back-btn' para que use apenas seu listener específico -->
                         <button type="button" id="logout-btn" class="back-btn">Sair</button>
                         <button type="button" id="btn-step1" class="next-btn" disabled>Iniciar Pedido</button>
                     </div>
@@ -459,34 +456,41 @@
         const generateSummary = () => {
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
-            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* 🍧', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
+            
+            // CORREÇÃO: Emojis substituídos por suas sequências de escape Unicode para garantir a compatibilidade.
+            let summaryArray = [
+                `\u{1F367} *Novo Pedido - Açaí Sabor da Terra* \u{1F367}`,
+                `\u{1F464} *Nome:* ${name}`,
+                `\u{1F4DE} *Telefone:* ${phone}`,
+                '---'
+            ];
             
             cart.forEach((item, index) => {
                 summaryArray.push(`*COPO ${index + 1}*`);
                 const formatList = (title, list) => list.length > 0 ? `${title}: ${list.join(', ')}` : '';
-                summaryArray.push(`📦 *Tamanho:* ${item.size.name}`);
-                if(item.creams.length > 0) summaryArray.push(formatList('🍦 *Cremes*', item.creams));
-                if(item.toppings.length > 0) summaryArray.push(formatList('🥣 *Acompanhamentos*', item.toppings));
-                if(item.fruits.length > 0) summaryArray.push(formatList('🍓 *Frutas*', item.fruits));
-                if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`🍫 *Cobertura:* ${item.syrup}`);
-                if (item.notes) summaryArray.push(`📝 *Observações:* ${item.notes}`);
+                summaryArray.push(`\u{1F4E6} *Tamanho:* ${item.size.name}`);
+                if(item.creams.length > 0) summaryArray.push(formatList(`\u{1F366} *Cremes*`, item.creams));
+                if(item.toppings.length > 0) summaryArray.push(formatList(`\u{1F963} *Acompanhamentos*`, item.toppings));
+                if(item.fruits.length > 0) summaryArray.push(formatList(`\u{1F353} *Frutas*`, item.fruits));
+                if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`\u{1F36B} *Cobertura:* ${item.syrup}`);
+                if (item.notes) summaryArray.push(`\u{1F4DD} *Observações:* ${item.notes}`);
                 summaryArray.push('---');
             });
             
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
-            if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `📍 *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `📍 *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `\u{1F4CD} *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
+            else { deliveryLine = `\u{1F4CD} *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
             summaryArray.push(deliveryLine);
 
-            let paymentText = `💳 Pagamento: ${payment.method}${payment.info}`;
+            let paymentText = `\u{1F4B3} *Pagamento:* ${payment.method}${payment.info}`;
             if (payment.method.includes('Cartão')) {
                 paymentText += `\nTotal com taxa: R$ ${payment.total.toFixed(2)}`;
             } else {
-                paymentText += `\n💰 Total: R$ ${payment.baseTotal.toFixed(2)}`;
+                paymentText += `\n\u{1F4B0} *Total:* R$ ${payment.baseTotal.toFixed(2)}`;
             }
             if (payment.method === 'Pix') {
-                paymentText += `\n🔑 Chave Pix (Celular): 88981905006`;
+                paymentText += `\n\u{1F511} *Chave Pix (Celular):* 88981905006`;
             }
             summaryArray.push(paymentText);
 
@@ -843,7 +847,6 @@
             }
         });
         
-        // CORREÇÃO: Listener de 'voltar' agora usa a classe 'js-back-btn' para evitar conflitos
         document.querySelectorAll('.js-back-btn').forEach(btn => btn.addEventListener('click', prevStep));
         document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8):not(#quick-order-submit-btn)').forEach(btn => btn.addEventListener('click', nextStep));
         
