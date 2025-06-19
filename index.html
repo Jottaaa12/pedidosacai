@@ -138,9 +138,7 @@
                     <div class="button-group" style="justify-content: center;">
                         <button id="send-code-btn">Enviar SMS de Verificação</button>
                     </div>
-                    <!-- Elemento para o reCAPTCHA do Firebase -->
-                    <div id="recaptcha-container" style="margin-top:15px;"></div>
-
+                    
                     <div id="code-verification-group" class="form-group hidden" style="margin-top: 20px;">
                         <label for="verification-code">Código de verificação</label>
                         <input type="text" id="verification-code" placeholder="******">
@@ -188,6 +186,8 @@
     <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button id="modal-pix-close">Fechar</button></div></div>
     <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button id="add-another-btn">Montar Outro Copo</button><button id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
     <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button id="modal-finalize-close">Entendi!</button></div></div>
+    <!-- Elemento invisível para o reCAPTCHA, agora não é mais necessário-->
+    <!-- <div id="recaptcha-container"></div> -->
 
     <!-- Script de Configuração do Firebase -->
     <script>
@@ -219,7 +219,6 @@
 
         // --- INÍCIO: LÓGICA DO FIREBASE ---
 
-        window.recaptchaVerifier = null;
         window.confirmationResult = null;
 
         // Gerencia a UI com base no estado de login
@@ -240,34 +239,36 @@
                 phoneLoginForm.classList.remove('hidden');
                 userLoggedInForm.classList.add('hidden');
                 saveOrderBtn.classList.add('hidden'); // Esconde o botão de salvar
-                // Limpa o objeto de pedido se o usuário sair
                 order.name = '';
                 order.phone = '';
             }
         });
         
-        // Renderiza o reCAPTCHA invisível
-        function renderRecaptcha() {
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'invisible',
-                'callback': (response) => { /* reCAPTCHA resolvido */ }
-            });
-            window.recaptchaVerifier.render();
-        }
-
         // Envia o código SMS para o telefone
         document.getElementById('send-code-btn').addEventListener('click', () => {
-            if (!window.recaptchaVerifier) {
-                renderRecaptcha();
-            }
-            const phoneInput = document.getElementById('phone');
-            let phoneNumber = phoneInput.value.replace(/\D/g, ''); // Remove não-dígitos
+            // CORREÇÃO: Cria um novo verificador a cada clique para garantir que não expire
+            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('send-code-btn', {
+                'size': 'invisible',
+                'callback': (response) => {
+                    // Este callback é chamado quando o reCAPTCHA é resolvido.
+                    // O envio do SMS já acontece depois de signInWithPhoneNumber.
+                }
+            });
             
+            const phoneInput = document.getElementById('phone');
+            let phoneNumber = phoneInput.value.replace(/\D/g, ''); 
+            
+            if (phoneNumber.length < 10) {
+                 showToast('Por favor, digite um número válido com DDD.');
+                 return;
+            }
+
             if (!phoneNumber.startsWith('55')) {
                 phoneNumber = '55' + phoneNumber;
             }
             const appVerifier = window.recaptchaVerifier;
 
+            // O método `render` é chamado implicitamente por `signInWithPhoneNumber`
             auth.signInWithPhoneNumber(`+${phoneNumber}`, appVerifier)
                 .then((confirmationResult) => {
                     window.confirmationResult = confirmationResult;
@@ -275,11 +276,11 @@
                     document.getElementById('code-verification-group').classList.remove('hidden');
                 }).catch((error) => {
                     console.error("Erro ao enviar SMS:", error);
-                    showToast('Erro ao enviar SMS. Verifique o número e o reCAPTCHA.');
-                    // Comentado para evitar erros caso grecaptcha não esteja pronto
-                    // window.recaptchaVerifier.render().then(widgetId => {
-                    //     grecaptcha.reset(widgetId);
-                    // });
+                    showToast('Erro ao enviar SMS. Verifique o número e tente novamente.');
+                    // Limpa o reCAPTCHA para permitir nova tentativa
+                    if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
+                    }
                 });
         });
 
@@ -291,7 +292,6 @@
             window.confirmationResult.confirm(code).then((result) => {
                 const user = result.user;
                 showToast('Login efetuado com sucesso!');
-                // O onAuthStateChanged vai cuidar de atualizar a UI
             }).catch((error) => {
                 console.error("Erro ao verificar código:", error);
                 showToast('Código inválido. Tente novamente.');
@@ -311,7 +311,7 @@
                 showToast("Você precisa estar logado para salvar.");
                 return;
             }
-            // A função generateSummary já preencheu o objeto `order`
+            generateSummary(); // Garante que o objeto `order` está atualizado
             const pedidoParaSalvar = {
                 clienteId: auth.currentUser.uid,
                 clienteNome: order.name,
@@ -320,7 +320,7 @@
                 carrinho: order.cart,
                 entrega: order.delivery,
                 pagamento: order.payment,
-                status: "Recebido" // Adicionando um status inicial
+                status: "Recebido"
             };
 
             db.collection("pedidos").add(pedidoParaSalvar)
@@ -337,10 +337,10 @@
         // --- FIM: LÓGICA DO FIREBASE ---
 
         const showToast = (message) => {
-             const toast = document.getElementById('toast-notification');
-             toast.textContent = message; toast.classList.add('show');
-             clearTimeout(toastTimeout);
-             toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+            const toast = document.getElementById('toast-notification');
+            toast.textContent = message; toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
         };
         
         const handleDeliveryStepLogic = () => {
@@ -495,7 +495,6 @@
         
         document.getElementById('btn-step1').addEventListener('click', () => {
             order.name = document.getElementById('fullName').value.trim();
-            // O telefone já foi pego pelo login
             nextStep();
         });
         
@@ -540,7 +539,8 @@
         modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
 
         showStep(currentStep);
-        renderRecaptcha(); // Inicia o reCAPTCHA ao carregar a página
+        // Não é mais necessário iniciar o recaptcha aqui
+        // renderRecaptcha(); 
     });
     </script>
 </body>
