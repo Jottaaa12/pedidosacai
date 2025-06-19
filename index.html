@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pedido de Açaí - Sabor da Terra</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -138,7 +138,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         .my-order-card {
-             border-left-color: var(--secondary-color);
+            border-left-color: var(--secondary-color);
         }
         .admin-order-card h3, .my-order-card h3 {
             margin: 0 0 10px 0;
@@ -146,7 +146,7 @@
             color: var(--primary-color);
         }
         .my-order-card h3 {
-             color: var(--secondary-color);
+            color: var(--secondary-color);
         }
         .admin-order-card p, .my-order-card p {
             margin: 4px 0;
@@ -244,7 +244,7 @@
                             </div>
                         </div>
                         <div class="button-group" style="justify-content: center; margin-top: 10px;">
-                               <button type="button" id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
+                                <button type="button" id="show-quick-order-btn" class="back-btn" style="width: 100%;">Fazer pedido rápido (sem login)</button>
                         </div>
                     </div>
                     
@@ -430,8 +430,24 @@
 
         const saveCurrentAcaiData = () => {
             const sizeRadio = document.querySelector('input[name="size"]:checked');
-            if (sizeRadio.value === 'custom') { const customPrice = parseFloat(document.getElementById('custom-value-input').value) || 0; currentAcai.size = { name: `Valor de R$ ${customPrice.toFixed(2)}`, price: customPrice }; } 
-            else { currentAcai.size = { name: sizeRadio.value, price: parseFloat(sizeRadio.dataset.price) }; }
+            
+            // FIX: Add a null check for sizeRadio to prevent a crash.
+            // This can happen if the user somehow gets to step 6 without selecting a size.
+            if (!sizeRadio) {
+                showToast("Erro: Tamanho não selecionado. Por favor, volte e escolha um tamanho.");
+                // Optionally, navigate back to the size selection step
+                currentStep = 2;
+                showStep(currentStep);
+                return; // Stop execution to prevent the error
+            }
+
+            if (sizeRadio.value === 'custom') { 
+                const customPrice = parseFloat(document.getElementById('custom-value-input').value) || 0; 
+                currentAcai.size = { name: `Valor de R$ ${customPrice.toFixed(2)}`, price: customPrice }; 
+            } else { 
+                currentAcai.size = { name: sizeRadio.value, price: parseFloat(sizeRadio.dataset.price) }; 
+            }
+            
             currentAcai.creams = getCheckedValues('creme');
             currentAcai.toppings = getCheckedValues('topping');
             currentAcai.additionalToppingCost = Math.max(0, currentAcai.toppings.length - 4) * 1.00;
@@ -457,53 +473,64 @@
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
             
-            // CORREÇÃO: Emojis substituídos por suas sequências de escape Unicode para garantir a compatibilidade.
             let summaryArray = [
-                `\u{1F367} *Novo Pedido - Açaí Sabor da Terra* \u{1F367}`,
-                `\u{1F464} *Nome:* ${name}`,
-                `\u{1F4DE} *Telefone:* ${phone}`,
+                '> Novo Pedido - Açaí Sabor da Terra <',
+                `> Nome: ${name}`,
+                `> Telefone: ${phone}`,
                 '---'
             ];
             
             cart.forEach((item, index) => {
-                summaryArray.push(`*COPO ${index + 1}*`);
-                const formatList = (title, list) => list.length > 0 ? `${title}: ${list.join(', ')}` : '';
-                summaryArray.push(`\u{1F4E6} *Tamanho:* ${item.size.name}`);
-                if(item.creams.length > 0) summaryArray.push(formatList(`\u{1F366} *Cremes*`, item.creams));
-                if(item.toppings.length > 0) summaryArray.push(formatList(`\u{1F963} *Acompanhamentos*`, item.toppings));
-                if(item.fruits.length > 0) summaryArray.push(formatList(`\u{1F353} *Frutas*`, item.fruits));
-                if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`\u{1F36B} *Cobertura:* ${item.syrup}`);
-                if (item.notes) summaryArray.push(`\u{1F4DD} *Observações:* ${item.notes}`);
+                summaryArray.push(`COPO ${index + 1}`);
+                const formatList = (title, list) => list.length > 0 ? `> ${title}: ${list.join(', ')}` : '';
+                
+                summaryArray.push(`> Tamanho: ${item.size.name}`);
+                if(item.creams.length > 0) summaryArray.push(formatList('Cremes', item.creams));
+                if(item.toppings.length > 0) summaryArray.push(formatList('Acompanhamentos', item.toppings));
+                if(item.fruits.length > 0) summaryArray.push(formatList('Frutas', item.fruits));
+                if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`> Cobertura: ${item.syrup}`);
+                if (item.notes) summaryArray.push(`> Observacoes: ${item.notes}`);
                 summaryArray.push('---');
             });
             
+            if (summaryArray[summaryArray.length - 1] === '---') {
+                summaryArray.pop();
+            }
+
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
-            if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `\u{1F4CD} *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `\u{1F4CD} *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            if (delivery.date) {
+                const [year, month, day] = delivery.date.split('-');
+                deliveryLine = `> Entrega: ${deliveryLocationText} para ${day}/${month}/${year}`;
+            } else {
+                deliveryLine = `> Entrega: ${deliveryLocationText} às ${delivery.time}`;
+            }
             summaryArray.push(deliveryLine);
 
-            let paymentText = `\u{1F4B3} *Pagamento:* ${payment.method}${payment.info}`;
+            summaryArray.push(`> Pagamento: ${payment.method}${payment.info}`);
+
             if (payment.method.includes('Cartão')) {
-                paymentText += `\nTotal com taxa: R$ ${payment.total.toFixed(2)}`;
+                summaryArray.push(`> Total: R$ ${payment.total.toFixed(2)}`);
             } else {
-                paymentText += `\n\u{1F4B0} *Total:* R$ ${payment.baseTotal.toFixed(2)}`;
+                summaryArray.push(`> Total: R$ ${payment.baseTotal.toFixed(2)}`);
             }
+
             if (payment.method === 'Pix') {
-                paymentText += `\n\u{1F511} *Chave Pix (Celular):* 88981905006`;
+                summaryArray.push(`> Chave Pix (Celular): 88981905006`);
             }
-            summaryArray.push(paymentText);
 
             const summaryText = summaryArray.filter(line => line).join('\n');
-            document.getElementById('summary-container').innerText = summaryText.replace(/\*/g, '');
+            
+            document.getElementById('summary-container').innerText = summaryText;
+            
             document.getElementById('send-whatsapp').href = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(summaryText)}`;
         };
         
         const resetCupBuilder = () => {
              ['size-group', 'creams-group', 'toppings-group', 'fruits-group', 'syrup-group'].forEach(groupId => {
                  document.getElementById(groupId).querySelectorAll('input').forEach(input => {
-                     input.checked = false;
-                     input.parentElement.classList.remove('checked');
+                         input.checked = false;
+                         input.parentElement.classList.remove('checked');
                  });
              });
              document.getElementById('observations').value = '';
@@ -852,10 +879,13 @@
         
         document.getElementById('add-to-cart-btn').addEventListener('click', () => {
             saveCurrentAcaiData();
-            order.cart.push(JSON.parse(JSON.stringify(currentAcai)));
-            currentAcai = {};
-            updateCartIndicator();
-            document.getElementById('modal-cart').classList.add('show');
+            // This needs to be guarded, because saveCurrentAcaiData might return early if size is not selected
+            if (currentAcai.size) { 
+                order.cart.push(JSON.parse(JSON.stringify(currentAcai)));
+                currentAcai = {};
+                updateCartIndicator();
+                document.getElementById('modal-cart').classList.add('show');
+            }
         });
         document.getElementById('add-another-btn').addEventListener('click', () => {
             document.getElementById('modal-cart').classList.remove('show');
