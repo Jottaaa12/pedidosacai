@@ -428,7 +428,7 @@
         const generateSummary = () => {
             saveFinalOrderData();
             const { name, phone, cart, delivery, payment } = order;
-            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* �', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
+            let summaryArray = ['🍧 *Novo Pedido - Açaí Sabor da Terra* 🍧', `👤 *Nome:* ${name}`, `📞 *Telefone:* ${phone}`, '---'];
             
             cart.forEach((item, index) => {
                 summaryArray.push(`*COPO ${index + 1}*`);
@@ -499,7 +499,7 @@
             let pedidoParaSalvar;
             generateSummary();
 
-            if (auth.currentUser) {
+            if (auth.currentUser && !isQuickOrder) { // Salva com ID apenas se estiver logado E não for pedido rápido
                 pedidoParaSalvar = {
                     clienteId: auth.currentUser.uid,
                     clienteNome: order.name,
@@ -785,6 +785,7 @@
         });
 
         document.getElementById('logout-btn').addEventListener('click', () => {
+            isQuickOrder = false; // Reseta o estado do pedido rápido ao sair
             auth.signOut().then(() => { showToast('Você saiu da sua conta.'); });
         });
         
@@ -808,13 +809,8 @@
                 showToast("Pedido salvo e pronto para enviar!");
                 window.open(whatsappUrl, '_blank');
             } catch (error) {
-                // CORREÇÃO: Trata o caso de usuário não logado (pedido rápido)
-                if (error === "Usuário não logado" && isQuickOrder) {
-                     window.open(whatsappUrl, '_blank');
-                } else {
-                    showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
-                    window.open(whatsappUrl, '_blank');
-                }
+                showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
+                window.open(whatsappUrl, '_blank');
             }
         });
         
@@ -847,7 +843,6 @@
             if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
         });
         
-        // CORREÇÃO: Listener de pagamento separado para mais clareza
         document.getElementById('payment-method').addEventListener('change', (e) => {
             const method = e.target.value;
             const trocoGroup = document.getElementById('cash-info');
@@ -922,11 +917,15 @@
         showQuickOrderBtn.addEventListener('click', () => {
             phoneLoginContainer.classList.add('hidden');
             quickOrderForm.classList.remove('hidden');
+            // CORREÇÃO: Esconde o reCAPTCHA para não interferir
+            document.getElementById('recaptcha-container').style.display = 'none';
         });
 
         backToLoginBtn.addEventListener('click', () => {
             quickOrderForm.classList.add('hidden');
             phoneLoginContainer.classList.remove('hidden');
+             // CORREÇÃO: Mostra o reCAPTCHA novamente
+            document.getElementById('recaptcha-container').style.display = 'flex';
         });
 
         quickOrderForm.addEventListener('input', () => {
@@ -938,7 +937,7 @@
             order.name = quickFullNameInput.value.trim();
             order.phone = quickPhoneInput.value.trim();
             order.clienteId = null; 
-            nextStep();
+            nextStep(); // Avança para a etapa 2
         });
 
         // --- 4. EXECUÇÃO INICIAL ---
