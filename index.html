@@ -423,7 +423,7 @@
             const deliveryLocationText = delivery.details ? `${delivery.location} - ${delivery.details}` : delivery.location;
             let deliveryLine;
             if(delivery.date) { const [year, month, day] = delivery.date.split('-'); deliveryLine = `📍 *Entrega Agendada:* ${deliveryLocationText} para ${day}/${month}/${year}`; } 
-            else { deliveryLine = `� *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
+            else { deliveryLine = `? *Entrega:* ${deliveryLocationText} às ${delivery.time}`; }
             summaryArray.push(deliveryLine);
 
             let paymentText = `💳 Pagamento: ${payment.method}${payment.info}`;
@@ -620,7 +620,7 @@
         }
         
         // --- 3. EVENT LISTENERS E EXECUÇÃO ---
-
+        
         auth.onAuthStateChanged(async user => {
             const formContent = document.getElementById('form-content');
             const adminPanel = document.getElementById('admin-panel');
@@ -633,7 +633,10 @@
 
             if (user) {
                 const userRef = db.collection('users').doc(user.uid);
-                const userDoc = await userRef.get();
+                const userDoc = await userRef.get().catch(err => { 
+                    console.error("Erro de permissão ao buscar usuário:", err);
+                    return null; // Retorna nulo para tratar o erro
+                });
                 
                 if (user.phoneNumber === adminPhoneNumber) {
                     showAdminPanel();
@@ -642,7 +645,7 @@
                     phoneLoginForm.classList.add('hidden');
                     userLoggedInForm.classList.remove('hidden');
                     
-                    if (userDoc.exists && userDoc.data().displayName) {
+                    if (userDoc && userDoc.exists && userDoc.data().displayName) {
                         const userName = userDoc.data().displayName;
                         document.getElementById('fullName').value = userName;
                         order.name = userName;
@@ -793,4 +796,4 @@
     });
     </script>
 </body>
-</html>"
+</html>
