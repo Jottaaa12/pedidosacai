@@ -57,12 +57,13 @@ body {
 
 /* ===== CONTAINER PRINCIPAL ===== */
 #widget-container {
-    max-width: 500px; 
-    width: 100%; 
+    max-width: 500px;
+    width: 100%;
+    min-width: 320px;
+    overflow: hidden;
     background-color: var(--widget-background);
     border-radius: var(--border-radius-lg); 
     box-shadow: var(--shadow-lg); 
-    overflow: hidden; 
     position: relative;
 }
 
@@ -764,4 +765,11 @@ body {
 
 .cart-item {
     animation: slideIn 0.3s ease;
+}
+
+/* Se houver texto rotacionado, limite a largura do bloco */
+.rotated-text, .vertical-text {
+    max-width: 40px;
+    overflow: hidden;
+    white-space: nowrap;
 } 
