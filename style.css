@@ -772,4 +772,15 @@ body {
     max-width: 40px;
     overflow: hidden;
     white-space: nowrap;
+}
+
+/* Força a ocultação de qualquer texto vertical ou rotacionado que possa vazar do layout */
+.vertical-text, .rotated-text, .side-text, .acai-vertical, [style*="rotate(-90deg)"] {
+    display: none !important;
+    visibility: hidden !important;
+    max-width: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
 } 
