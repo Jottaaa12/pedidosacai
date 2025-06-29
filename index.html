@@ -15,213 +15,37 @@
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     
-    <style>
-        :root {
-            --primary-color: #4A00E0; --secondary-color: #8E2DE2; --background-color: #f4f4f9;
-            --widget-background: #ffffff; --text-color: #333; --border-color: #ddd;
-            --disabled-color: #ccc; --warning-bg: #fffbe6; --warning-border: #facc15; --warning-text: #b45309;
-            --success-bg: #f0fff4; --success-border: #9ae6b4; --success-text: #2f855a;
-        }
-        body {
-            font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color);
-            margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh;
-        }
-        #widget-container {
-            max-width: 500px; width: 100%; background-color: var(--widget-background);
-            border-radius: 12px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); overflow: hidden; position: relative;
-        }
-        #toast-notification {
-            position: fixed; bottom: 20px; left: 50%; 
-            -webkit-transform: translateX(-50%) translateY(200%);
-            transform: translateX(-50%) translateY(200%);
-            background-color: var(--primary-color); color: white; padding: 10px 20px; border-radius: 20px;
-            font-size: 0.9rem; font-weight: 500; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            opacity: 0; 
-            -webkit-transition: all 0.4s ease-in-out;
-            transition: all 0.4s ease-in-out; 
-            z-index: 1001;
-        }
-        #toast-notification.show { opacity: 1; 
-            -webkit-transform: translateX(-50%) translateY(0);
-            transform: translateX(-50%) translateY(0); }
-        #cart-indicator {
-            position: absolute; top: 15px; right: 20px;
-            background-color: var(--primary-color); color: white;
-            width: 28px; height: 28px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.9rem; font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            -webkit-transform: scale(0);
-            transform: scale(0); 
-            -webkit-transition: transform 0.3s ease;
-            transition: transform 0.3s ease;
-        }
-        #cart-indicator.show { 
-            -webkit-transform: scale(1);
-            transform: scale(1); 
-        }
-        #progress-bar-container { width: 100%; background-color: var(--border-color); }
-        #progress-bar { height: 8px; width: 0%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); 
-            -webkit-transition: width 0.5s ease-in-out;
-            transition: width 0.5s ease-in-out; 
-        }
-        #form-content, #admin-panel, #my-orders-panel { padding: 25px 30px; }
-        .step { display: none; 
-            -webkit-animation: fadeIn 0.5s;
-            animation: fadeIn 0.5s; }
-        .step.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .main-header { text-align: center; margin-bottom: 25px; }
-        .main-header img.logo { max-width: 120px; margin-bottom: 15px; }
-        .main-header h1 { margin: 0 0 5px 0; color: var(--primary-color); font-weight: 700; font-size: 1.8rem; }
-        .main-header p { margin: 0; }
-        .main-header a { color: var(--secondary-color); text-decoration: none; font-weight: 500; }
-        .main-header a:hover { text-decoration: underline; }
-
-        .step-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
-        .step-header h2 { text-align: left; color: var(--primary-color); font-weight: 600; margin: 0; flex-grow: 1; }
-        #topping-info { width: 100%; text-align: center; font-size: 0.9rem; font-weight: 500; color: var(--secondary-color); margin-bottom: 15px; }
-        .action-btn { font-size: 0.8rem; background: none; border: 1px solid var(--secondary-color); color: var(--secondary-color); cursor: pointer; padding: 5px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; 
-            -webkit-transition: background-color 0.2s;
-            transition: background-color 0.2s; 
-        }
-        .action-btn:hover { background-color: #e9dffc; }
-        .disclaimer-note { font-size: 0.8rem; color: #666; text-align: center; margin-top: 15px; background-color: #f9f9f9; padding: 8px; border-radius: 6px; }
-        #time-sensitive-warning { background-color: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning-text); margin-bottom: 15px; line-height: 1.5; }
-        #time-sensitive-warning strong { color: var(--warning-text); font-weight: 600; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
-        input[type="text"], input[type="tel"], input[type="number"], select, textarea, input[type="date"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; font-family: 'Poppins', sans-serif; box-sizing: border-box; 
-            -webkit-transition: border-color 0.3s, box-shadow 0.3s;
-            transition: border-color 0.3s, box-shadow 0.3s; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 0, 224, 0.2); }
-        textarea { resize: vertical; min-height: 80px; }
-        .choice-item { display: flex; align-items: center; background-color: #fafafa; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; 
-            -webkit-transition: all 0.2s ease;
-            transition: all 0.2s ease; }
-        .choice-item:hover { border-color: var(--secondary-color); }
-        .choice-item input { margin-right: 12px; accent-color: var(--primary-color); width: 1.2em; height: 1.2em; }
-        .choice-item.checked { background-color: #e9dffc; border-color: var(--primary-color); font-weight: 500; }
-        .button-group { display: flex; justify-content: space-between; margin-top: 30px; gap: 10px; }
-        button, #send-whatsapp, .pix-btn { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); color: var(--widget-background); border: none; padding: 12px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; 
-            -webkit-transition: all 0.3s ease;
-            transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-        #send-whatsapp:hover, button:hover:not(:disabled), .pix-btn:hover { 
-            -webkit-transform: translateY(-2px);
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); }
-        button:disabled { background: var(--disabled-color); cursor: not-allowed; box-shadow: none; transform: none; }
-        .back-btn { background: none; color: var(--text-color); box-shadow: none; border: 1px solid var(--border-color); }
-        .back-btn:hover { background-color: #f0f0f0; }
-        #summary-container, .payment-details { background-color: #f9f4ff; border: 1px solid var(--secondary-color); border-radius: 8px; padding: 20px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-size: 0.95rem; }
-        .payment-details p { margin: 5px 0; }
-        .pix-btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .pix-btn { flex: 1; font-size: 0.9rem; padding: 10px; }
-        .hidden { display: none !important; }
-        .footer-credits { text-align: center; padding: 15px; background-color: #f8f9fa; font-size: 0.8rem; color: #6c757d; border-top: 1px solid var(--border-color); }
-        .footer-credits a { color: var(--primary-color); font-weight: 600; text-decoration: none; }
-        .footer-credits a:hover { text-decoration: underline; }
-
-        /* Estilos do Painel de Admin e "Meus Pedidos" */
-        #admin-panel, #my-orders-panel {
-            padding-bottom: 50px;
-        }
-        .admin-order-card, .my-order-card {
-            background: #fff;
-            border: 1px solid var(--border-color);
-            border-left: 5px solid var(--primary-color);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
-        .my-order-card {
-            border-left-color: var(--secondary-color);
-        }
-        .admin-order-card h3, .my-order-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 1.1rem;
-            color: var(--primary-color);
-        }
-        .my-order-card h3 {
-            color: var(--secondary-color);
-        }
-        .admin-order-card p, .my-order-card p {
-            margin: 4px 0;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-        .admin-order-card .order-items, .my-order-card .order-items {
-            margin-top: 10px;
-            padding-left: 15px;
-            border-left: 2px solid var(--border-color);
-        }
-        .admin-order-card strong, .my-order-card strong {
-            font-weight: 600;
-            color: #333;
-        }
-        .order-status-group {
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .order-status-group select {
-            flex-grow: 1;
-        }
-        .order-status-group button {
-            padding: 8px 15px;
-            font-size: 0.9rem;
-        }
-        .my-order-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .my-order-actions button {
-            font-size: 0.8rem;
-            padding: 8px 12px;
-            flex: 1;
-        }
-
-        /* Modal */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
-        .modal-overlay.show { opacity: 1; pointer-events: all; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 90%; width: 320px; transform: scale(0.9); transition: transform 0.3s ease; }
-        .modal-overlay.show .modal-content { transform: scale(1); }
-        #qrcode-container { margin: 20px auto; width: 256px; height: 256px; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; }
-        #qrcode-container img { width: 100% !important; height: 100% !important; }
-        .modal-content h3 { margin-top: 0; color: var(--primary-color); }
-        .modal-content p { color: var(--text-color); font-weight: 500; }
-        #cart-modal-buttons { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
-        
-        @media (max-width: 480px) {
-            body { padding: 0; align-items: flex-start; }
-            #widget-container { width: 100%; margin: 0; border-radius: 0; box-shadow: none; min-height: 100vh; }
-            #form-content, #admin-panel, #my-orders-panel { padding: 20px 15px; }
-            input, select, button, .pix-btn { padding: 14px; font-size: 1rem; }
-            .checkbox-group, .radio-group { grid-template-columns: 1fr; }
-            .choice-item { white-space: nowrap; }
-            #summary-container { width: 100%; box-sizing: border-box; }
-        }
-    </style>
+    <!-- Arquivo CSS -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="widget-container">
-        <div id="toast-notification"></div>
-        <div id="cart-indicator" class="hidden">0</div>
+    <main id="widget-container">
+        <div id="toast-notification" aria-live="polite"></div>
+        <div id="cart-indicator" class="hidden" aria-label="Quantidade de itens no carrinho">0</div>
         <div id="progress-bar-container"><div id="progress-bar"></div></div>
+        
+        <!-- Visualização do Carrinho -->
+        <aside id="cart-summary" class="cart-summary hidden">
+            <header class="cart-summary__header">
+                <h3>🛒 Seu Carrinho</h3>
+                <button type="button" id="clear-cart-btn" class="btn--danger" aria-label="Limpar todo o carrinho">Limpar Tudo</button>
+            </header>
+            <div id="cart-items-list" class="cart-summary__items">
+                <!-- Itens do carrinho serão inseridos aqui dinamicamente -->
+            </div>
+            <footer class="cart-summary__footer">
+                <p class="cart-summary__total">Total: <span id="cart-total-price">R$ 0,00</span></p>
+            </footer>
+        </aside>
         
         <div id="form-content">
             <!-- Etapa 1: Login/Identificação -->
-            <div id="step-1" class="step active">
-                <div class="main-header">
+            <section id="step-1" class="step active">
+                <header class="main-header">
                     <img src="https://i.imgur.com/9VzcNVM.png" alt="Logo do Açaí Sabor da Terra" class="logo">
                     <h1>Açaí Sabor da Terra</h1>
                     <p><a href="https://instagram.com/acaisabordaterra_" target="_blank" rel="noopener noreferrer">@acaisabordaterra_</a></p>
-                </div>
+                </header>
 
                 <div id="login-options-container">
                     <!-- Formulário de Login com Telefone (padrão) -->
@@ -229,7 +53,8 @@
                         <div id="phone-login-form">
                             <div class="form-group">
                                 <label for="phone">Telefone (com DDD)</label>
-                                <input type="tel" id="phone" placeholder="Ex: 88912345678" autocomplete="tel">
+                                <input type="tel" id="phone" placeholder="Ex: 88912345678" autocomplete="tel" aria-describedby="phone-help">
+                                <small id="phone-help" class="form-help">Digite apenas números, com DDD</small>
                             </div>
                             <div id="recaptcha-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
                             <div class="button-group" style="justify-content: center;">
@@ -277,19 +102,228 @@
                         <button type="button" id="btn-step1" class="next-btn" disabled>Iniciar Pedido</button>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- Etapas do formulário (2 a 9) -->
-            <div id="step-2" class="step"><div class="step-header"><h2>📦 Escolha o tamanho</h2></div><div id="size-group" class="radio-group"><label class="choice-item"><input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 300g – R$ 15,00</label><label class="choice-item"><input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 360g – R$ 18,00</label><label class="choice-item"><input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 400g – R$ 20,00</label><label class="choice-item"><input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 440g – R$ 22,00</label><label class="choice-item"><input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 500g – R$ 25,00</label><label class="choice-item"><input type="radio" name="size" value="custom"> Outro valor</label></div><div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;"><label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label><input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30"><p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="btn-step2" class="next-btn" disabled>Próximo</button></div></div>
-            <div id="step-3" class="step"><div class="step-header"><h2>🍦 Escolha até 2</h2><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="creams-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="creme" value="Creme de maracujá"> Creme de maracujá</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de morango"> Creme de morango</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de ninho"> Creme de ninho</label><label class="choice-item"><input type="checkbox" name="creme" value="Creme de cupuaçu"> Creme de cupuaçu</label></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
-            <div id="step-4" class="step"><div class="step-header"><h2>🥣 Acompanhamentos</h2><button type="button" class="action-btn surprise-btn">✨ Surpreenda-me!</button><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="topping-info">Você tem 4 acompanhamentos grátis.</div><div id="toppings-group" class="checkbox-group"><label class="choice-item"><input type="checkbox" name="topping" value="Leite em pó"> Leite em pó</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha Caramelizada"> Castanha Caramelizada</label><label class="choice-item"><input type="checkbox" name="topping" value="Granola"> Granola</label><label class="choice-item"><input type="checkbox" name="topping" value="Castanha"> Castanha</label><label class="choice-item"><input type="checkbox" name="topping" value="Gotas de Chocolate"> Gotas de Chocolate</label><label class="choice-item"><input type="checkbox" name="topping" value="Paçoquita"> Paçoquita</label><label class="choice-item"><input type="checkbox" name="topping" value="Amendoim"> Amendoim</label><label class="choice-item"><input type="checkbox" name="topping" value="Chocoball"> Chocoball</label><label class="choice-item"><input type="checkbox" name="topping" value="Canudinho Biju"> Canudinho Biju</label><label class="choice-item"><input type="checkbox" name="topping" value="Cereja"> Cereja</label><label class="choice-item"><input type="checkbox" name="topping" value="Sucrilhos"> Sucrilhos</label><label class="choice-item"><input type="checkbox" name="topping" value="M&M"> M&M</label><label class="choice-item"><input type="checkbox" name="topping" value="Ovomaltine"> Ovomaltine</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Branco"> Cookies Branco</label><label class="choice-item"><input type="checkbox" name="topping" value="Cookies Preto"> Cookies Preto</label><label class="choice-item"><input type="checkbox" name="topping" value="Farinha de tapioca"> Farinha de tapioca</label></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
-            <div id="step-5" class="step"><div class="step-header"><h2>🍓 Escolha até 2</h2><button type="button" class="action-btn clear-btn">Limpar</button></div><div id="fruits-group" class="checkbox-group" data-max="2"><label class="choice-item"><input type="checkbox" name="fruit" value="Morango"> Morango</label><label class="choice-item"><input type="checkbox" name="fruit" value="Kiwi"> Kiwi</label><label class="choice-item"><input type="checkbox" name="fruit" value="Uva"> Uva</label></div><p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" class="next-btn">Próximo</button></div></div>
-            <div id="step-6" class="step"><div class="step-header"><h2>✨ Toques Finais</h2></div><div class="form-group"><label>Cobertura</label><div id="syrup-group" class="radio-group"><label class="choice-item"><input type="radio" name="syrup" value="Sem cobertura" checked> Sem cobertura</label><label class="choice-item"><input type="radio" name="syrup" value="Morango"> Morango</label><label class="choice-item"><input type="radio" name="syrup" value="Chocolate"> Chocolate</label><label class="choice-item"><input type="radio" name="syrup" value="Maracujá"> Maracujá</label></div></div><div class="form-group"><label for="observations">Observações (opcional)</label><textarea id="observations"></textarea></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="add-to-cart-btn">Adicionar Copo ao Pedido</button></div></div>
+            <section id="step-2" class="step">
+                <header class="step-header">
+                    <h2>📦 Escolha o tamanho</h2>
+                </header>
+                <div id="size-group" class="radio-group">
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="300g – R$ 15,00" data-price="15.00"> 
+                        300g – R$ 15,00
+                    </label>
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="360g – R$ 18,00" data-price="18.00"> 
+                        360g – R$ 18,00
+                    </label>
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="400g – R$ 20,00" data-price="20.00"> 
+                        400g – R$ 20,00
+                    </label>
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="440g – R$ 22,00" data-price="22.00"> 
+                        440g – R$ 22,00
+                    </label>
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="500g – R$ 25,00" data-price="25.00"> 
+                        500g – R$ 25,00
+                    </label>
+                    <label class="choice-item">
+                        <input type="radio" name="size" value="custom"> 
+                        Outro valor
+                    </label>
+                </div>
+                <div id="custom-value-group" class="form-group hidden" style="margin-top: 15px;">
+                    <label for="custom-value-input">Qual valor (R$ 26 a R$ 50)?</label>
+                    <input type="number" id="custom-value-input" min="26" max="50" placeholder="Ex: 30">
+                    <p class="disclaimer-note" style="text-align: left; font-size: 0.75rem;">Calculado a R$ 50/kg.</p>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" id="btn-step2" class="next-btn" disabled>Próximo</button>
+                </div>
+            </section>
+
+            <section id="step-3" class="step">
+                <header class="step-header">
+                    <h2>🍦 Escolha até 2</h2>
+                    <button type="button" class="action-btn clear-btn" aria-label="Limpar seleção de cremes">Limpar</button>
+                </header>
+                <div id="creams-group" class="checkbox-group" data-max="2">
+                    <label class="choice-item">
+                        <input type="checkbox" name="creme" value="Creme de maracujá"> 
+                        Creme de maracujá
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="creme" value="Creme de morango"> 
+                        Creme de morango
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="creme" value="Creme de ninho"> 
+                        Creme de ninho
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="creme" value="Creme de cupuaçu"> 
+                        Creme de cupuaçu
+                    </label>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" class="next-btn">Próximo</button>
+                </div>
+            </section>
+
+            <section id="step-4" class="step">
+                <header class="step-header">
+                    <h2>🥣 Acompanhamentos</h2>
+                    <button type="button" class="action-btn surprise-btn" aria-label="Seleção automática de acompanhamentos">✨ Surpreenda-me!</button>
+                    <button type="button" class="action-btn clear-btn" aria-label="Limpar seleção de acompanhamentos">Limpar</button>
+                </header>
+                <div id="topping-info">Você tem 4 acompanhamentos grátis.</div>
+                <div id="toppings-group" class="checkbox-group">
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Leite em pó"> 
+                        Leite em pó
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Castanha Caramelizada"> 
+                        Castanha Caramelizada
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Granola"> 
+                        Granola
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Castanha"> 
+                        Castanha
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Gotas de Chocolate"> 
+                        Gotas de Chocolate
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Paçoquita"> 
+                        Paçoquita
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Amendoim"> 
+                        Amendoim
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Chocoball"> 
+                        Chocoball
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Canudinho Biju"> 
+                        Canudinho Biju
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Cereja"> 
+                        Cereja
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Sucrilhos"> 
+                        Sucrilhos
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="M&M"> 
+                        M&M
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Ovomaltine"> 
+                        Ovomaltine
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Cookies Branco"> 
+                        Cookies Branco
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Cookies Preto"> 
+                        Cookies Preto
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="topping" value="Farinha de tapioca"> 
+                        Farinha de tapioca
+                    </label>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" class="next-btn">Próximo</button>
+                </div>
+            </section>
+
+            <section id="step-5" class="step">
+                <header class="step-header">
+                    <h2>🍓 Escolha até 2</h2>
+                    <button type="button" class="action-btn clear-btn" aria-label="Limpar seleção de frutas">Limpar</button>
+                </header>
+                <div id="fruits-group" class="checkbox-group" data-max="2">
+                    <label class="choice-item">
+                        <input type="checkbox" name="fruit" value="Morango"> 
+                        Morango
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="fruit" value="Kiwi"> 
+                        Kiwi
+                    </label>
+                    <label class="choice-item">
+                        <input type="checkbox" name="fruit" value="Uva"> 
+                        Uva
+                    </label>
+                </div>
+                <p class="disclaimer-note">Atenção: A disponibilidade das frutas pode variar.</p>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" class="next-btn">Próximo</button>
+                </div>
+            </section>
+
+            <section id="step-6" class="step">
+                <header class="step-header">
+                    <h2>✨ Toques Finais</h2>
+                </header>
+                <div class="form-group">
+                    <label>Cobertura</label>
+                    <div id="syrup-group" class="radio-group">
+                        <label class="choice-item">
+                            <input type="radio" name="syrup" value="Sem cobertura" checked> 
+                            Sem cobertura
+                        </label>
+                        <label class="choice-item">
+                            <input type="radio" name="syrup" value="Morango"> 
+                            Morango
+                        </label>
+                        <label class="choice-item">
+                            <input type="radio" name="syrup" value="Chocolate"> 
+                            Chocolate
+                        </label>
+                        <label class="choice-item">
+                            <input type="radio" name="syrup" value="Maracujá"> 
+                            Maracujá
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="observations">Observações (opcional)</label>
+                    <textarea id="observations" placeholder="Alguma observação especial?"></textarea>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" id="add-to-cart-btn">Adicionar Copo ao Pedido</button>
+                </div>
+            </section>
             
             <!-- ETAPA 7 ATUALIZADA -->
-            <div id="step-7" class="step">
-                <div class="step-header"><h2>📍 Local e Horário</h2></div>
-                <div id="time-sensitive-warning" class="disclaimer-note hidden"><strong>Pedidos para hoje encerrados!</strong><br>Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.</div>
+            <section id="step-7" class="step">
+                <header class="step-header">
+                    <h2>📍 Local e Horário</h2>
+                </header>
+                <div id="time-sensitive-warning" class="disclaimer-note hidden">
+                    <strong>Pedidos para hoje encerrados!</strong><br>
+                    Para garantir a montagem e entrega, recebemos pedidos para o mesmo dia somente até às 14:30. Seu pedido será agendado. Qualquer dúvida, fale conosco no WhatsApp.
+                </div>
                 
                 <div class="form-group">
                     <label for="college-location">Faculdade / Local de Entrega</label>
@@ -361,42 +395,129 @@
                     <button type="button" class="back-btn js-back-btn">Voltar</button>
                     <button type="button" id="btn-step7" class="next-btn" disabled>Próximo</button>
                 </div>
-            </div>
-            <!-- FIM DA ETAPA 7 ATUALIZADA -->
+            </section>
 
-            <div id="step-8" class="step"><div class="step-header"><h2>💳 Pagamento</h2></div><div class="form-group"><label for="payment-method">Forma de pagamento</label><select id="payment-method"><option value="" disabled selected>Selecione</option><option value="Pix">Pix</option><option value="Dinheiro">Dinheiro</option><option value="Cartão Crédito">Cartão de Crédito</option><option value="Cartão Débito">Cartão de Débito</option></select></div><div id="pix-info" class="payment-details hidden"><p>Pague de forma rápida e segura com Pix.</p><div class="pix-btn-group"><button type="button" id="generate-qr-btn" class="pix-btn">Gerar QR Code</button><button type="button" id="copy-br-code-btn" class="pix-btn">Copiar Chave</button></div></div><div id="cash-info" class="form-group hidden"><label for="cash-change">Troco para:</label><input type="number" id="cash-change"></div><div id="credit-card-info" class="payment-details hidden"><p>Taxa de <strong>3,40%</strong> aplicada.</p><p>Valor do pedido: <span id="cc-original-price"></span></p><p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p></div><div id="debit-card-info" class="payment-details hidden"><p>Taxa de <strong>1,40%</strong> aplicada.</p><p>Valor do pedido: <span id="dc-original-price"></span></p><p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p></div><div class="button-group"><button type="button" class="back-btn js-back-btn">Voltar</button><button type="button" id="btn-step8" class="next-btn" disabled>Ver Resumo</button></div></div>
-            <div id="step-9" class="step"><div class="step-header"><h2>🧾 Resumo do Pedido</h2></div><div id="summary-container"></div><div class="button-group" style="justify-content:center;"><button type="button" class="back-btn js-back-btn" style="flex: 1;">Corrigir</button><a id="send-whatsapp" href="#" target="_blank" style="flex: 2;">Enviar e Salvar Pedido</a></div></div>
+            <section id="step-8" class="step">
+                <header class="step-header">
+                    <h2>💳 Pagamento</h2>
+                </header>
+                <div class="form-group">
+                    <label for="payment-method">Forma de pagamento</label>
+                    <select id="payment-method">
+                        <option value="" disabled selected>Selecione</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Cartão Crédito">Cartão de Crédito</option>
+                        <option value="Cartão Débito">Cartão de Débito</option>
+                    </select>
+                </div>
+                <div id="pix-info" class="payment-details hidden">
+                    <p>Pague de forma rápida e segura com Pix.</p>
+                    <div class="pix-btn-group">
+                        <button type="button" id="generate-qr-btn" class="pix-btn">Gerar QR Code</button>
+                        <button type="button" id="copy-br-code-btn" class="pix-btn">Copiar Chave</button>
+                    </div>
+                </div>
+                <div id="cash-info" class="form-group hidden">
+                    <label for="cash-change">Troco para:</label>
+                    <input type="number" id="cash-change" placeholder="Ex: 30">
+                </div>
+                <div id="credit-card-info" class="payment-details hidden">
+                    <p>Taxa de <strong>3,15%</strong> aplicada.</p>
+                    <p>Valor do pedido: <span id="cc-original-price"></span></p>
+                    <p><strong>Valor com taxa: <span id="cc-total-price"></span></strong></p>
+                </div>
+                <div id="debit-card-info" class="payment-details hidden">
+                    <p>Taxa de <strong>3,15%</strong> aplicada.</p>
+                    <p>Valor do pedido: <span id="dc-original-price"></span></p>
+                    <p><strong>Valor com taxa: <span id="dc-total-price"></span></strong></p>
+                </div>
+                <div class="button-group">
+                    <button type="button" class="back-btn js-back-btn">Voltar</button>
+                    <button type="button" id="btn-step8" class="next-btn" disabled>Ver Resumo</button>
+                </div>
+            </section>
+
+            <section id="step-9" class="step">
+                <header class="step-header">
+                    <h2>🧾 Resumo do Pedido</h2>
+                </header>
+                <div id="summary-container"></div>
+                <div class="button-group" style="justify-content:center;">
+                    <button type="button" class="back-btn js-back-btn" style="flex: 1;">Corrigir</button>
+                    <a id="send-whatsapp" href="#" target="_blank" style="flex: 2;">Enviar e Salvar Pedido</a>
+                </div>
+            </section>
         </div>
         
         <!-- PAINEL DE ADMIN -->
-        <div id="admin-panel" class="hidden">
-            <div class="step-header">
+        <section id="admin-panel" class="hidden">
+            <header class="step-header">
                 <h2>📋 Gerenciamento de Pedidos</h2>
                 <button type="button" id="back-to-form-btn" class="action-btn">Voltar ao Formulário</button>
-            </div>
+            </header>
             <div id="admin-orders-list">
                 <p>Carregando pedidos...</p>
             </div>
-        </div>
+        </section>
         
         <!-- PAINEL MEUS PEDIDOS -->
-        <div id="my-orders-panel" class="hidden">
-            <div class="step-header">
+        <section id="my-orders-panel" class="hidden">
+            <header class="step-header">
                 <h2>🍧 Meus Pedidos Anteriores</h2>
                 <button type="button" id="back-to-form-from-my-orders-btn" class="action-btn">Voltar</button>
-            </div>
+            </header>
             <div id="my-orders-list">
                 <p>Carregando seus pedidos...</p>
             </div>
-        </div>
+        </section>
 
-        <div class="footer-credits">Gerenciamento de pedidos, feito por <a href="https://instagram.com/jottaaa0" target="_blank" rel="noopener noreferrer">@jottaaa0</a></div>
-    </div>
+        <footer class="footer-credits">
+            Gerenciamento de pedidos, feito por <a href="https://instagram.com/jottaaa0" target="_blank" rel="noopener noreferrer">@jottaaa0</a>
+        </footer>
+    </main>
     
     <!-- Modais -->
-    <div id="modal-pix" class="modal-overlay"><div class="modal-content"><h3>Pague com Pix</h3><div id="qrcode-container"></div><p>Valor: <strong id="modal-pix-value"></strong></p><p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p><button type="button" id="modal-pix-close">Fechar</button></div></div>
-    <div id="modal-cart" class="modal-overlay"><div class="modal-content"><h3>Copo Adicionado!</h3><p>O que você deseja fazer agora?</p><div id="cart-modal-buttons"><button type="button" id="add-another-btn">Montar Outro Copo</button><button type="button" id="finish-order-btn" class="next-btn">Finalizar Pedido</button></div></div></div>
-    <div id="modal-finalize" class="modal-overlay"><div class="modal-content"><h3>Quase lá!</h3><p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p><button type="button" id="modal-finalize-close">Entendi!</button></div></div>
+    <div id="modal-pix" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content">
+            <h3>Pague com Pix</h3>
+            <div id="qrcode-container"></div>
+            <p>Valor: <strong id="modal-pix-value"></strong></p>
+            <p style="font-size:0.8rem; word-break: break-all;">Chave: 88981905006</p>
+            <button type="button" id="modal-pix-close">Fechar</button>
+        </div>
+    </div>
+    
+    <div id="modal-cart" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content">
+            <h3>Copo Adicionado!</h3>
+            <p>O que você deseja fazer agora?</p>
+            <div id="cart-modal-buttons">
+                <button type="button" id="add-another-btn">Montar Outro Copo</button>
+                <button type="button" id="finish-order-btn" class="next-btn">Finalizar Pedido</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-finalize" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content">
+            <h3>Quase lá!</h3>
+            <p>Seu pedido está pronto. Para finalizar e garantir sua entrega, clique no botão "Enviar via WhatsApp".</p>
+            <button type="button" id="modal-finalize-close">Entendi!</button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="modal-confirmation" class="modal-overlay" aria-hidden="true">
+        <div class="modal-content">
+            <h3 id="confirmation-title">Confirmar Ação</h3>
+            <p id="confirmation-message">Tem certeza que deseja realizar esta ação?</p>
+            <div class="button-group">
+                <button type="button" id="confirmation-cancel" class="back-btn">Cancelar</button>
+                <button type="button" id="confirmation-confirm" class="btn--danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Script de Configuração do Firebase -->
     <script>
@@ -413,761 +534,12 @@
         const db = firebase.firestore();
     </script>
 
-    <!-- Script Principal do App -->
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. DECLARAÇÃO DE VARIÁVEIS E CONSTANTES ---
-        let currentStep = 1;
-        const order = { cart: [] };
-        let currentAcai = {};
-        const whatsAppNumber = '5588981905006';
-        let toastTimeout;
-        const qrCodeInstance = new QRCode(document.getElementById("qrcode-container"), { width: 256, height: 256 });
-        let fruitToastShown = false;
-        const adminPhoneNumber = '+5588981905006';
-        window.confirmationResult = null;
-        let isQuickOrder = false;
-        
-        // --- 2. DEFINIÇÃO DE TODAS AS FUNÇÕES ---
-        const validateStep = {
-            1: () => document.getElementById('btn-step1').disabled = !(document.getElementById('fullName').value),
-            2: () => { const sel = document.querySelector('input[name="size"]:checked'); const c = document.getElementById('custom-value-input'); const v = parseFloat(c.value); document.getElementById('custom-value-group').classList.toggle('hidden', !sel || sel.value !== 'custom'); document.getElementById('btn-step2').disabled = !sel || (sel.value === 'custom' && (isNaN(v) || v < 26 || v > 50)); },
-            6: () => document.getElementById('add-to-cart-btn').disabled = !document.querySelector('input[name="syrup"]:checked'),
-            7: () => {
-                const college = document.getElementById('college-location').value;
-                let locationOk = false;
-                switch(college) {
-                    case 'UNINASSAU':
-                        const blockOk = document.getElementById('delivery-block').value;
-                        const roomOk = document.getElementById('room-number').value.trim();
-                        locationOk = blockOk && roomOk;
-                        break;
-                    case 'UFDPAR':
-                        locationOk = document.getElementById('ufdpar-info').value.trim();
-                        break;
-                    case 'ONIBUS BITU':
-                        locationOk = true; // Não precisa de input adicional
-                        break;
-                    case 'OUTRA':
-                        locationOk = document.getElementById('other-college-info').value.trim();
-                        break;
-                }
-                const isDateVisible = !document.getElementById('date-picker-group').classList.contains('hidden');
-                const scheduleOk = isDateVisible ? document.getElementById('delivery-date').value : document.getElementById('delivery-time').value;
-                document.getElementById('btn-step7').disabled = !(college && locationOk && scheduleOk);
-            },
-            8: () => {
-                const paymentMethod = document.getElementById('payment-method').value;
-                document.getElementById('btn-step8').disabled = !paymentMethod;
-            }
-        };
-
-        const showToast = (message) => {
-            const toast = document.getElementById('toast-notification');
-            toast.textContent = message; toast.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
-        };
-        
-        const handleDeliveryStepLogic = () => {
-            const now = new Date();
-            const isAfterCutOff = now.getHours() > 14 || (now.getHours() === 14 && now.getMinutes() >= 30);
-            document.getElementById('time-sensitive-warning').classList.toggle('hidden', !isAfterCutOff);
-            document.getElementById('date-picker-group').classList.toggle('hidden', !isAfterCutOff);
-            document.getElementById('time-picker-group').classList.toggle('hidden', isAfterCutOff);
-            if (isAfterCutOff) {
-                const dateInput = document.getElementById('delivery-date');
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                dateInput.min = tomorrow.toISOString().split('T')[0];
-            }
-        };
-
-        const showStep = (stepNumber) => {
-            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-            const stepEl = document.getElementById(`step-${stepNumber}`);
-            if (stepEl) {
-                stepEl.classList.add('active');
-                document.getElementById('widget-container').scrollIntoView({ behavior: 'smooth' });
-            }
-            const totalProgressSteps = 9;
-            document.getElementById('progress-bar').style.width = `${((stepNumber - 1) / (totalProgressSteps - 1)) * 100}%`;
-            if (stepNumber === 7) handleDeliveryStepLogic();
-            if (stepNumber === 9) document.getElementById('modal-finalize').classList.add('show');
-        };
-        
-        const nextStep = () => { if(currentStep < 9) { currentStep++; showStep(currentStep); } };
-        const prevStep = () => { if(currentStep > 1) { currentStep--; showStep(currentStep); } };
-        const getCheckedValues = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
-
-        const crc16 = (payload) => {
-            let crc = 0xFFFF;
-            for (let i = 0; i < payload.length; i++) {
-                crc ^= payload.charCodeAt(i) << 8;
-                for (let j = 0; j < 8; j++) {
-                    crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
-                }
-            }
-            return ('0000' + (crc & 0xFFFF).toString(16).toUpperCase()).slice(-4);
-        };
-        
-        const generateBrCode = () => {
-            const formatField = (id, value) => `${id}${value.length.toString().padStart(2, '0')}${value}`;
-            const payload = [
-                formatField('00', '01'),
-                formatField('26', formatField('00', 'br.gov.bcb.pix') + formatField('01', order.pix.key)),
-                formatField('52', '0000'),
-                formatField('53', '986'),
-                formatField('54', order.payment.baseTotal.toFixed(2)),
-                formatField('58', 'BR'),
-                formatField('59', order.pix.name.substring(0, 25)),
-                formatField('60', order.pix.city),
-                formatField('62', formatField('05', '***'))
-            ].join('');
-            const finalPayload = `${payload}6304`;
-            return finalPayload + crc16(finalPayload);
-        };
-
-        const saveCurrentAcaiData = () => {
-            const sizeRadio = document.querySelector('input[name="size"]:checked');
-            
-            if (!sizeRadio) {
-                showToast("Erro: Tamanho não selecionado. Por favor, volte e escolha um tamanho.");
-                currentStep = 2;
-                showStep(currentStep);
-                return; // Stop execution to prevent the error
-            }
-
-            if (sizeRadio.value === 'custom') { 
-                const customPrice = parseFloat(document.getElementById('custom-value-input').value) || 0; 
-                currentAcai.size = { name: `Valor de R$ ${customPrice.toFixed(2)}`, price: customPrice }; 
-            } else { 
-                currentAcai.size = { name: sizeRadio.value, price: parseFloat(sizeRadio.dataset.price) }; 
-            }
-            
-            currentAcai.creams = getCheckedValues('creme');
-            currentAcai.toppings = getCheckedValues('topping');
-            currentAcai.additionalToppingCost = Math.max(0, currentAcai.toppings.length - 4) * 1.00;
-            currentAcai.fruits = getCheckedValues('fruit');
-            currentAcai.syrup = document.querySelector('input[name="syrup"]:checked')?.value || 'Nenhuma';
-            currentAcai.notes = document.getElementById('observations').value.trim();
-        };
-
-        const saveFinalOrderData = () => {
-            const method = document.getElementById('payment-method').value;
-            const baseTotal = order.cart.reduce((total, item) => total + item.size.price + item.additionalToppingCost, 0);
-            let finalPrice = baseTotal, info = '';
-            if (method === 'Dinheiro') info = document.getElementById('cash-change').value ? ` (Troco para: R$ ${parseFloat(document.getElementById('cash-change').value).toFixed(2)})` : '';
-            if (method === 'Cartão Crédito') finalPrice *= 1.034;
-            if (method === 'Cartão Débito') finalPrice *= 1.014;
-            order.pix = { key: '+5588981905006', name: 'JOAO PEDRO CARVALHO TORRE', city: 'BARROQUINHA' };
-            order.payment = { method, info, total: finalPrice, baseTotal: baseTotal };
-            
-            // LOGICA DE ENTREGA ATUALIZADA
-            const college = document.getElementById('college-location').value;
-            let location = college;
-            let details = '';
-            switch(college) {
-                case 'UNINASSAU':
-                    location = `UNINASSAU - ${document.getElementById('delivery-block').value}`;
-                    details = document.getElementById('room-number').value.trim();
-                    break;
-                case 'UFDPAR':
-                    details = document.getElementById('ufdpar-info').value.trim();
-                    break;
-                case 'ONIBUS BITU':
-                    location = 'ÔNIBUS BITU';
-                    break;
-                case 'OUTRA':
-                    location = 'OUTRA FACULDADE';
-                    details = document.getElementById('other-college-info').value.trim();
-                    break;
-            }
-
-            const isDateVisible = !document.getElementById('date-picker-group').classList.contains('hidden');
-            order.delivery = { 
-                location: location, 
-                details: details, 
-                time: isDateVisible ? null : document.getElementById('delivery-time').value, 
-                date: isDateVisible ? document.getElementById('delivery-date').value : null 
-            };
-        };
-        
-        const generateSummary = () => {
-            saveFinalOrderData();
-            const { name, phone, cart, delivery, payment } = order;
-            
-            let summaryArray = [
-                '> Novo Pedido - Açaí Sabor da Terra <',
-                `> Nome: ${name}`,
-                `> Telefone: ${phone}`,
-                '---'
-            ];
-            
-            cart.forEach((item, index) => {
-                summaryArray.push(`COPO ${index + 1}`);
-                const formatList = (title, list) => list.length > 0 ? `> ${title}: ${list.join(', ')}` : '';
-                
-                summaryArray.push(`> Tamanho: ${item.size.name}`);
-                if(item.creams.length > 0) summaryArray.push(formatList('Cremes', item.creams));
-                if(item.toppings.length > 0) summaryArray.push(formatList('Acompanhamentos', item.toppings));
-                if(item.fruits.length > 0) summaryArray.push(formatList('Frutas', item.fruits));
-                if (item.syrup && item.syrup !== 'Nenhuma' && item.syrup !== 'Sem cobertura') summaryArray.push(`> Cobertura: ${item.syrup}`);
-                if (item.notes) summaryArray.push(`> Observacoes: ${item.notes}`);
-                summaryArray.push('---');
-            });
-            
-            if (summaryArray[summaryArray.length - 1] === '---') {
-                summaryArray.pop();
-            }
-
-            // LÓGICA DE RESUMO DE ENTREGA ATUALIZADA
-            let deliveryLocationText = delivery.location;
-            if (delivery.details) {
-                deliveryLocationText += ` - ${delivery.details}`;
-            }
-
-            let deliveryLine;
-            if (delivery.date) {
-                const [year, month, day] = delivery.date.split('-');
-                deliveryLine = `> Entrega: ${deliveryLocationText} para ${day}/${month}/${year}`;
-            } else {
-                deliveryLine = `> Entrega: ${deliveryLocationText} às ${delivery.time}`;
-            }
-            summaryArray.push(deliveryLine);
-
-            summaryArray.push(`> Pagamento: ${payment.method}${payment.info}`);
-
-            if (payment.method.includes('Cartão')) {
-                summaryArray.push(`> Total: R$ ${payment.total.toFixed(2)}`);
-            } else {
-                summaryArray.push(`> Total: R$ ${payment.baseTotal.toFixed(2)}`);
-            }
-
-            if (payment.method === 'Pix') {
-                summaryArray.push(`> Chave Pix (Celular): 88981905006`);
-            }
-
-            const summaryText = summaryArray.filter(line => line).join('\n');
-            
-            document.getElementById('summary-container').innerText = summaryText;
-            
-            document.getElementById('send-whatsapp').href = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(summaryText)}`;
-        };
-        
-        const resetCupBuilder = () => {
-             ['size-group', 'creams-group', 'toppings-group', 'fruits-group', 'syrup-group'].forEach(groupId => {
-                 document.getElementById(groupId).querySelectorAll('input').forEach(input => {
-                         input.checked = false;
-                         input.parentElement.classList.remove('checked');
-                 });
-             });
-             document.getElementById('observations').value = '';
-             document.getElementById('topping-info').textContent = 'Você tem 4 acompanhamentos grátis.';
-        };
-        const updateCartIndicator = () => {
-             const indicator = document.getElementById('cart-indicator');
-             indicator.textContent = order.cart.length;
-             indicator.classList.toggle('show', order.cart.length > 0);
-        };
-        
-        function renderRecaptcha() {
-            const sendCodeBtn = document.getElementById('send-code-btn');
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-                'size': 'normal',
-                'callback': (response) => {
-                    sendCodeBtn.disabled = false;
-                },
-                'expired-callback': () => {
-                    sendCodeBtn.disabled = true;
-                }
-            });
-            window.recaptchaVerifier.render();
-        }
-
-        async function saveOrderToFirestore() {
-            let pedidoParaSalvar;
-            generateSummary();
-
-            if (auth.currentUser && !isQuickOrder) {
-                pedidoParaSalvar = {
-                    clienteId: auth.currentUser.uid,
-                    clienteNome: order.name,
-                    clienteTelefone: auth.currentUser.phoneNumber,
-                    dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
-                    carrinho: order.cart,
-                    entrega: order.delivery,
-                    pagamento: order.payment,
-                    status: "Recebido"
-                };
-            } else {
-                 pedidoParaSalvar = {
-                    clienteId: null, // Pedido rápido sem login
-                    clienteNome: order.name,
-                    clienteTelefone: order.phone,
-                    dataDoPedido: firebase.firestore.FieldValue.serverTimestamp(),
-                    carrinho: order.cart,
-                    entrega: order.delivery,
-                    pagamento: order.payment,
-                    status: "Recebido"
-                };
-            }
-
-            try {
-                const docRef = await db.collection("pedidos").add(pedidoParaSalvar);
-                console.log("Pedido salvo com ID: ", docRef.id);
-                return Promise.resolve();
-            } catch (error) {
-                console.error("Erro ao salvar pedido: ", error);
-                showToast("Erro ao salvar o pedido.");
-                return Promise.reject(error);
-            }
-        }
-        
-        function showAdminPanel() {
-            document.getElementById('form-content').classList.add('hidden');
-            document.getElementById('my-orders-panel').classList.add('hidden');
-            document.getElementById('admin-panel').classList.remove('hidden');
-            document.getElementById('progress-bar-container').classList.add('hidden');
-            fetchAndDisplayAllOrders();
-        }
-
-        function showMyOrdersPanel() {
-            document.getElementById('form-content').classList.add('hidden');
-            document.getElementById('admin-panel').classList.add('hidden');
-            document.getElementById('my-orders-panel').classList.remove('hidden');
-            document.getElementById('progress-bar-container').classList.add('hidden');
-            fetchAndDisplayMyOrders();
-        }
-
-        function showFormPanel() {
-            document.getElementById('admin-panel').classList.add('hidden');
-            document.getElementById('my-orders-panel').classList.add('hidden');
-            document.getElementById('form-content').classList.remove('hidden');
-            document.getElementById('progress-bar-container').classList.remove('hidden');
-            showStep(currentStep);
-        }
-        
-        function fetchAndDisplayAllOrders() {
-            const ordersListDiv = document.getElementById('admin-orders-list');
-            ordersListDiv.innerHTML = '<p>Carregando pedidos...</p>';
-            db.collection('pedidos').orderBy('dataDoPedido', 'desc')
-              .onSnapshot(querySnapshot => {
-                  if (querySnapshot.empty) {
-                      ordersListDiv.innerHTML = '<p>Nenhum pedido encontrado.</p>';
-                      return;
-                  }
-                  ordersListDiv.innerHTML = '';
-                  querySnapshot.forEach(doc => {
-                      const orderData = doc.data();
-                      const orderCard = document.createElement('div');
-                      orderCard.className = 'admin-order-card';
-                      const pedidoDate = orderData.dataDoPedido ? orderData.dataDoPedido.toDate() : new Date();
-                      const formattedDate = pedidoDate.toLocaleDateString('pt-BR') + ' às ' + pedidoDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-                      let itemsHtml = '';
-                      orderData.carrinho.forEach((item, index) => {
-                          itemsHtml += `<p><strong>Copo ${index + 1}:</strong> ${item.size.name}</p>`;
-                      });
-                      let detalhesCopo = '';
-                      if (orderData.carrinho && orderData.carrinho[0]) {
-                          const primeiroCopo = orderData.carrinho[0];
-                          if (primeiroCopo.creams && primeiroCopo.creams.length > 0) detalhesCopo += `<p><strong>Cremes:</strong> ${primeiroCopo.creams.join(', ')}</p>`;
-                          if (primeiroCopo.toppings && primeiroCopo.toppings.length > 0) detalhesCopo += `<p><strong>Acompanhamentos:</strong> ${primeiroCopo.toppings.join(', ')}</p>`;
-                          if (primeiroCopo.fruits && primeiroCopo.fruits.length > 0) detalhesCopo += `<p><strong>Frutas:</strong> ${primeiroCopo.fruits.join(', ')}</p>`;
-                          if (primeiroCopo.syrup && primeiroCopo.syrup !== 'Sem cobertura') detalhesCopo += `<p><strong>Cobertura:</strong> ${primeiroCopo.syrup}</p>`;
-                      }
-                      orderCard.innerHTML = `<h3>Pedido de: ${orderData.clienteNome || 'Nome não informado'}</h3> <p><strong>Telefone:</strong> ${orderData.clienteTelefone}</p> <p><strong>Data:</strong> ${formattedDate}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)} (${orderData.pagamento.method})</p> <div class="order-items">${itemsHtml}${detalhesCopo}</div> <div class="order-status-group"> <label for="status-${doc.id}" style="margin-bottom:0;">Status:</label> <select id="status-${doc.id}"> <option value="Recebido" ${orderData.status === 'Recebido' ? 'selected' : ''}>Recebido</option> <option value="Em preparo" ${orderData.status === 'Em preparo' ? 'selected' : ''}>Em preparo</option> <option value="Saiu para entrega" ${orderData.status === 'Saiu para entrega' ? 'selected' : ''}>Saiu para entrega</option> <option value="Finalizado" ${orderData.status === 'Finalizado' ? 'selected' : ''}>Finalizado</option> <option value="Cancelado" ${orderData.status === 'Cancelado' ? 'selected' : ''}>Cancelado</option> </select> <button type="button" class="save-status-btn" data-id="${doc.id}">Salvar</button> </div>`;
-                      ordersListDiv.appendChild(orderCard);
-                  });
-                  document.querySelectorAll('.save-status-btn').forEach(button => {
-                      button.addEventListener('click', async (e) => {
-                          const orderId = e.target.dataset.id;
-                          const newStatus = document.getElementById(`status-${orderId}`).value;
-                          try {
-                              await db.collection('pedidos').doc(orderId).update({ status: newStatus });
-                              showToast('Status do pedido atualizado!');
-                          } catch (error) {
-                              showToast('Erro ao atualizar status.');
-                              console.error("Erro ao atualizar status:", error);
-                          }
-                      });
-                  });
-              }, error => {
-                  console.error("Erro ao buscar pedidos em tempo real: ", error);
-                  ordersListDiv.innerHTML = '<p>Erro ao carregar pedidos. Verifique o console.</p>';
-              });
-        }
-        
-        async function fetchAndDisplayMyOrders() {
-            const myOrdersListDiv = document.getElementById('my-orders-list');
-            myOrdersListDiv.innerHTML = '<p>Carregando seus pedidos...</p>';
-            if (!auth.currentUser) {
-                myOrdersListDiv.innerHTML = '<p>Você precisa estar logado para ver seus pedidos.</p>';
-                return;
-            }
-            try {
-                const querySnapshot = await db.collection('pedidos').where('clienteId', '==', auth.currentUser.uid).orderBy('dataDoPedido', 'desc').limit(10).get();
-                if (querySnapshot.empty) {
-                    myOrdersListDiv.innerHTML = '<p>Você ainda não fez nenhum pedido.</p>';
-                    return;
-                }
-                myOrdersListDiv.innerHTML = '';
-                querySnapshot.forEach(doc => {
-                    const orderData = doc.data();
-                    const orderCard = document.createElement('div');
-                    orderCard.className = 'my-order-card';
-                    const pedidoDate = orderData.dataDoPedido.toDate();
-                    const formattedDate = pedidoDate.toLocaleDateString('pt-BR');
-                    orderCard.innerHTML = `<h3>Pedido de ${formattedDate}</h3> <p><strong>Status:</strong> ${orderData.status || 'Recebido'}</p> <p><strong>Total:</strong> R$ ${orderData.pagamento.total.toFixed(2)}</p> <div class="my-order-actions"> <button type="button" class="repeat-order-btn">Repetir Pedido</button> <button type="button" class="edit-order-btn">Editar e Repetir</button> </div>`;
-                    orderCard.querySelector('.repeat-order-btn').addEventListener('click', () => {
-                        order.cart = orderData.carrinho;
-                        updateCartIndicator();
-                        showToast('Pedido carregado! Complete a entrega e pagamento.');
-                        showFormPanel();
-                        currentStep = 7;
-                        showStep(currentStep);
-                    });
-                    orderCard.querySelector('.edit-order-btn').addEventListener('click', () => {
-                        order.cart = orderData.carrinho;
-                        updateCartIndicator();
-                        showToast('Pedido carregado! Faça suas alterações.');
-                        showFormPanel();
-                        currentStep = 2;
-                        showStep(currentStep);
-                    });
-                    myOrdersListDiv.appendChild(orderCard);
-                });
-            } catch (error) {
-                console.error("Erro ao buscar meus pedidos:", error);
-                myOrdersListDiv.innerHTML = '<p>Erro ao carregar seus pedidos.</p>';
-            }
-        }
-        
-        function fallbackCopyTextToClipboard(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.position = "fixed";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                const successful = document.execCommand('copy');
-                if (successful) {
-                    showToast('Código Pix copiado!');
-                } else {
-                    showToast('Falha ao copiar a chave.');
-                }
-            } catch (err) {
-                console.error('Falha ao copiar com o método antigo: ', err);
-                showToast('Falha ao copiar a chave.');
-            }
-            document.body.removeChild(textArea);
-        }
-
-        // --- 3. EVENT LISTENERS E EXECUÇÃO ---
-        
-        auth.onAuthStateChanged(async user => {
-            const phoneLoginContainer = document.getElementById('phone-login-container');
-            const quickOrderForm = document.getElementById('quick-order-form');
-            const userLoggedInForm = document.getElementById('user-logged-in-form');
-            
-            const dynamicButtons = document.querySelectorAll('.dynamic-btn');
-            dynamicButtons.forEach(btn => btn.remove());
-
-            if (user) {
-                isQuickOrder = false; // Garante que o modo de pedido rápido é desativado ao logar
-                const userRef = db.collection('users').doc(user.uid);
-                const userDoc = await userRef.get().catch(err => { 
-                    console.error("Erro de permissão ao buscar usuário:", err);
-                    return null;
-                });
-                
-                if (user.phoneNumber === adminPhoneNumber) {
-                    showAdminPanel();
-                } else {
-                    showFormPanel();
-                    phoneLoginContainer.classList.add('hidden');
-                    quickOrderForm.classList.add('hidden');
-                    userLoggedInForm.classList.remove('hidden');
-                    
-                    if (userDoc && userDoc.exists && userDoc.data().displayName) {
-                        const userName = userDoc.data().displayName;
-                        document.getElementById('fullName').value = userName;
-                        order.name = userName;
-                        validateStep[1]();
-                        nextStep();
-                    } else {
-                        showStep(1);
-                    }
-                }
-                
-                document.getElementById('logged-in-phone').textContent = user.phoneNumber;
-                order.phone = user.phoneNumber;
-                
-                const logoutBtn = document.getElementById('logout-btn');
-                const buttonGroup = logoutBtn.parentNode;
-
-                if (user.phoneNumber === adminPhoneNumber) {
-                    const adminBtn = document.createElement('button');
-                    adminBtn.id = 'admin-btn';
-                    adminBtn.type = 'button';
-                    adminBtn.textContent = 'Gerenciar Pedidos';
-                    adminBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(adminBtn, logoutBtn);
-                    adminBtn.addEventListener('click', showAdminPanel);
-                } else {
-                    const myOrdersBtn = document.createElement('button');
-                    myOrdersBtn.id = 'my-orders-btn';
-                    myOrdersBtn.type = 'button';
-                    myOrdersBtn.textContent = 'Meus Pedidos';
-                    myOrdersBtn.classList.add('action-btn', 'dynamic-btn');
-                    buttonGroup.insertBefore(myOrdersBtn, logoutBtn);
-                    myOrdersBtn.addEventListener('click', showMyOrdersPanel);
-                }
-
-            } else {
-                // Se não estiver no fluxo de pedido rápido, reseta para a tela de login.
-                if (!isQuickOrder) {
-                    showFormPanel();
-                    phoneLoginContainer.classList.remove('hidden');
-                    quickOrderForm.classList.add('hidden');
-                    userLoggedInForm.classList.add('hidden');
-                    order.name = '';
-                    order.phone = '';
-                    currentStep = 1; 
-                    showStep(1);
-                }
-            }
-        });
-        
-        document.getElementById('back-to-form-btn').addEventListener('click', showFormPanel);
-        document.getElementById('back-to-form-from-my-orders-btn').addEventListener('click', showFormPanel);
-        
-        document.getElementById('send-code-btn').addEventListener('click', () => {
-            const phoneInput = document.getElementById('phone');
-            let phoneNumber = phoneInput.value.replace(/\D/g, ''); 
-            if (phoneNumber.length < 10) { showToast('Por favor, digite um número válido com DDD.'); return; }
-            if (!phoneNumber.startsWith('55')) { phoneNumber = '55' + phoneNumber; }
-            const appVerifier = window.recaptchaVerifier;
-            auth.signInWithPhoneNumber(`+${phoneNumber}`, appVerifier)
-                .then((confirmationResult) => {
-                    window.confirmationResult = confirmationResult;
-                    showToast('Código SMS enviado com sucesso!');
-                    document.getElementById('code-verification-group').classList.remove('hidden');
-                }).catch((error) => {
-                    console.error("Erro ao enviar SMS:", error);
-                    showToast('Erro ao enviar SMS. Tente novamente.');
-                    try { grecaptcha.reset(); document.getElementById('send-code-btn').disabled = true; } catch(e) { console.error("Erro ao resetar reCAPTCHA", e)}
-                });
-        });
-
-        document.getElementById('verify-code-btn').addEventListener('click', () => {
-            const code = document.getElementById('verification-code').value;
-            if (!window.confirmationResult || !code) return;
-            window.confirmationResult.confirm(code).then((result) => { 
-                showToast('Login efetuado com sucesso!'); 
-                // A lógica de `onAuthStateChanged` vai tratar o resto
-            })
-            .catch((error) => { console.error("Erro ao verificar código:", error); showToast('Código inválido. Tente novamente.'); });
-        });
-
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            isQuickOrder = false; // Reseta o estado do pedido rápido ao sair
-            auth.signOut().then(() => { showToast('Você saiu da sua conta.'); });
-        });
-        
-        document.getElementById('btn-step1').addEventListener('click', async () => {
-            const user = auth.currentUser;
-            const name = document.getElementById('fullName').value.trim();
-            if (user && name) {
-                const userRef = db.collection('users').doc(user.uid);
-                await userRef.set({ displayName: name, phoneNumber: user.phoneNumber }, { merge: true });
-            }
-            order.name = name;
-            nextStep();
-        });
-
-        document.getElementById('send-whatsapp').addEventListener('click', async (event) => {
-            event.preventDefault(); 
-            generateSummary();
-            const whatsappUrl = event.target.href;
-            try {
-                await saveOrderToFirestore();
-                showToast("Pedido salvo e pronto para enviar!");
-                window.open(whatsappUrl, '_blank');
-            } catch (error) {
-                showToast("Erro ao salvar, mas pode enviar no WhatsApp.");
-                window.open(whatsappUrl, '_blank');
-            }
-        });
-        
-        document.querySelectorAll('.js-back-btn').forEach(btn => btn.addEventListener('click', prevStep));
-        document.querySelectorAll('.next-btn:not(#btn-step1):not(#finish-order-btn):not(#btn-step8):not(#quick-order-submit-btn)').forEach(btn => btn.addEventListener('click', nextStep));
-        
-        document.getElementById('add-to-cart-btn').addEventListener('click', () => {
-            saveCurrentAcaiData();
-            // This needs to be guarded, because saveCurrentAcaiData might return early if size is not selected
-            if (currentAcai.size) { 
-                order.cart.push(JSON.parse(JSON.stringify(currentAcai)));
-                currentAcai = {};
-                updateCartIndicator();
-                document.getElementById('modal-cart').classList.add('show');
-            }
-        });
-        document.getElementById('add-another-btn').addEventListener('click', () => {
-            document.getElementById('modal-cart').classList.remove('show');
-            resetCupBuilder();
-            currentStep = 2; showStep(currentStep);
-        });
-        document.getElementById('finish-order-btn').addEventListener('click', () => {
-            document.getElementById('modal-cart').classList.remove('show');
-            currentStep = 7; showStep(currentStep);
-        });
-        document.getElementById('btn-step8').addEventListener('click', () => {
-            generateSummary();
-            nextStep();
-        });
-        document.getElementById('form-content').addEventListener('input', e => { const s = e.target.closest('.step')?.id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); });
-        ['size-group', 'syrup-group', 'delivery-time', 'delivery-date', 'college-location', 'delivery-block'].forEach(id => { 
-            const el = document.getElementById(id);
-            if(el) el.addEventListener('change', e => { const s = e.target.closest('.step').id.split('-')[1]; if (s && validateStep[s]) validateStep[s](); }); 
-        });
-        
-        // NOVO LISTENER PARA A SELEÇÃO DE FACULDADE
-        document.getElementById('college-location').addEventListener('change', (e) => {
-            const selection = e.target.value;
-            // Esconde todos os grupos de detalhes
-            document.getElementById('uninassau-details').classList.add('hidden');
-            document.getElementById('ufdpar-details').classList.add('hidden');
-            document.getElementById('bitu-bus-note').classList.add('hidden');
-            document.getElementById('other-college-details').classList.add('hidden');
-
-            // Mostra o grupo correto
-            switch(selection) {
-                case 'UNINASSAU':
-                    document.getElementById('uninassau-details').classList.remove('hidden');
-                    break;
-                case 'UFDPAR':
-                    document.getElementById('ufdpar-details').classList.remove('hidden');
-                    break;
-                case 'ONIBUS BITU':
-                    document.getElementById('bitu-bus-note').classList.remove('hidden');
-                    break;
-                case 'OUTRA':
-                    document.getElementById('other-college-details').classList.remove('hidden');
-                    break;
-            }
-            validateStep[7](); // Revalida a etapa
-        });
-
-        document.getElementById('payment-method').addEventListener('change', (e) => {
-            const method = e.target.value;
-            const trocoGroup = document.getElementById('cash-info');
-            const pixGroup = document.getElementById('pix-info');
-            ['credit-card-info', 'debit-card-info'].forEach(id => document.getElementById(id).classList.add('hidden'));
-
-            trocoGroup.classList.toggle('hidden', method !== 'Dinheiro');
-            pixGroup.classList.toggle('hidden', method !== 'Pix');
-
-            if (method === 'Cartão Crédito' || method === 'Cartão Débito') {
-                const baseTotal = (order.cart.reduce((total, item) => total + item.size.price + item.additionalToppingCost, 0)) || 0;
-                const price = `R$ ${baseTotal.toFixed(2)}`;
-                if (method === 'Cartão Crédito') {
-                    document.getElementById('cc-original-price').innerText = price;
-                    document.getElementById('cc-total-price').innerText = `R$ ${(baseTotal * 1.034).toFixed(2)}`;
-                    document.getElementById('credit-card-info').classList.remove('hidden');
-                } else {
-                    document.getElementById('dc-original-price').innerText = price;
-                    document.getElementById('dc-total-price').innerText = `R$ ${(baseTotal * 1.014).toFixed(2)}`;
-                    document.getElementById('debit-card-info').classList.remove('hidden');
-                }
-            }
-            validateStep[8]();
-        });
-
-        document.querySelectorAll('.checkbox-group').forEach(g => { g.addEventListener('change', e => { const cbs = g.querySelectorAll('input[type=checkbox]'); const count = Array.from(cbs).filter(cb => cb.checked).length; if (g.hasAttribute('data-max')) { const max = parseInt(g.dataset.max, 10); if (count > max) e.target.checked = false; if (count === max) { if (g.id === 'creams-group') showToast('Dupla Perfeita! 🍦'); if (g.id === 'fruits-group') showToast('Seleção Saudável! 🍓');}} if (g.id === 'fruits-group' && count > 0 && !fruitToastShown) { showToast('Disponibilidade das frutas a confirmar via WhatsApp.'); fruitToastShown = true; } cbs.forEach(cb => cb.parentElement.classList.toggle('checked', cb.checked)); }); });
-        const toppingInfo = document.getElementById('topping-info'), toppingsGroup = document.getElementById('toppings-group');
-        toppingsGroup.addEventListener('change', () => { const free = 4, count = toppingsGroup.querySelectorAll('input:checked').length, extra = Math.max(0, count - free); toppingInfo.textContent = extra > 0 ? `Adicionais: ${extra} (R$ ${extra.toFixed(2)})` : `Você tem ${Math.max(0, free-count)} acompanhamento(s) grátis.`; if (count === free) showToast('Combo Incrível! 🏆'); });
-        document.querySelectorAll('.clear-btn, .surprise-btn').forEach(btn => btn.addEventListener('click', e => { const g = e.target.closest('.step').querySelector('.checkbox-group'), cbs = Array.from(g.querySelectorAll('input[type=checkbox]')); cbs.forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('checked'); }); if (e.target.classList.contains('surprise-btn')) { const max = g.id === 'toppings-group' ? 4 : parseInt(g.dataset.max, 10); const shuffled = cbs.sort(() => 0.5 - Math.random()); shuffled.slice(0, max).forEach(cb => { cb.checked = true; cb.parentElement.classList.add('checked'); }); } if (g.id === 'toppings-group') toppingsGroup.dispatchEvent(new Event('change')); }));
-        
-        document.getElementById('generate-qr-btn').addEventListener('click', () => { 
-            saveFinalOrderData();
-            const brCode = generateBrCode();
-            qrCodeInstance.clear(); 
-            qrCodeInstance.makeCode(brCode); 
-            document.getElementById('modal-pix-value').textContent = `R$ ${order.payment.baseTotal.toFixed(2)}`; 
-            document.getElementById('modal-pix').classList.add('show'); 
-        });
-
-        document.getElementById('copy-br-code-btn').addEventListener('click', () => { 
-            saveFinalOrderData();
-            const brCode = generateBrCode();
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(brCode)
-                    .then(() => showToast('Código Pix copiado!'))
-                    .catch(err => {
-                        console.error('Falha ao copiar com a API moderna: ', err);
-                        fallbackCopyTextToClipboard(brCode);
-                    });
-            } else {
-                fallbackCopyTextToClipboard(brCode);
-            }
-        });
-        
-        const modalPix = document.getElementById('modal-pix');
-        modalPix.addEventListener('click', (e) => { if (e.target === modalPix) modalPix.classList.remove('show'); });
-        document.getElementById('modal-pix-close').addEventListener('click', () => modalPix.classList.remove('show'));
-        
-        const modalFinalize = document.getElementById('modal-finalize');
-        document.getElementById('modal-finalize-close').addEventListener('click', () => modalFinalize.classList.remove('show'));
-        modalFinalize.addEventListener('click', (e) => { if (e.target === modalFinalize) modalFinalize.classList.remove('show'); });
-        
-        // --- INÍCIO: LÓGICA DO PEDIDO RÁPIDO ---
-        const phoneLoginContainer = document.getElementById('phone-login-container');
-        const quickOrderForm = document.getElementById('quick-order-form');
-        const showQuickOrderBtn = document.getElementById('show-quick-order-btn');
-        const backToLoginBtn = document.getElementById('back-to-login-btn');
-        const quickOrderSubmitBtn = document.getElementById('quick-order-submit-btn');
-        const quickFullNameInput = document.getElementById('quick-fullName');
-        const quickPhoneInput = document.getElementById('quick-phone');
-
-        showQuickOrderBtn.addEventListener('click', () => {
-            phoneLoginContainer.classList.add('hidden');
-            quickOrderForm.classList.remove('hidden');
-            document.getElementById('recaptcha-container').style.display = 'none';
-        });
-
-        backToLoginBtn.addEventListener('click', () => {
-            quickOrderForm.classList.add('hidden');
-            phoneLoginContainer.classList.remove('hidden');
-            document.getElementById('recaptcha-container').style.display = 'flex';
-        });
-
-        quickOrderForm.addEventListener('input', () => {
-            const isNameValid = quickFullNameInput.value.trim().length > 2;
-            const isPhoneValid = quickPhoneInput.value.replace(/\D/g, '').length >= 10;
-            quickOrderSubmitBtn.disabled = !(isNameValid && isPhoneValid);
-        });
-
-        quickOrderSubmitBtn.addEventListener('click', () => {
-            isQuickOrder = true; // Sinaliza que estamos no fluxo de pedido rápido
-            order.name = quickFullNameInput.value.trim();
-            order.phone = quickPhoneInput.value.trim();
-            order.clienteId = null; 
-            nextStep(); // Avança para a etapa 2
-        });
-
-        // --- 4. EXECUÇÃO INICIAL ---
-        showStep(currentStep);
-        try {
-            renderRecaptcha();
-        } catch(e) {
-            console.error("Falha ao renderizar reCAPTCHA. Pode ser um problema de conexão ou bloqueador de anúncios.", e);
-            showToast("Não foi possível carregar o verificador de SMS.");
-        }
-    });
-    </script>
+    <!-- Arquivos JavaScript na ordem correta -->
+    <script src="app-state.js"></script>
+    <script src="ui.js"></script>
+    <script src="cart.js"></script>
+    <script src="form-steps.js"></script>
+    <script src="firebase.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
