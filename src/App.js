@@ -316,7 +316,7 @@ const Authentication = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 border-4 border-red-500">
       {/* O container do reCAPTCHA continua aqui, essencial para o verifier. */}
       <div id="recaptcha-container"></div>
 
