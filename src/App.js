@@ -159,33 +159,6 @@ const Authentication = () => {
     phone: ''
   });
 
-  // Setup do reCAPTCHA invisível
-  const setupRecaptcha = () => {
-    // Evita múltiplas instâncias. O verifier fica no objeto window
-    // para persistir entre re-renderizações do componente.
-    if (window.recaptchaVerifier) {
-      window.recaptchaVerifier.clear();
-    }
-    try {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': (response) => {
-          // reCAPTCHA resolvido. O envio do SMS é tratado no sendSMSCode.
-        }
-      });
-    } catch (error) {
-      console.error('Erro ao configurar reCAPTCHA:', error);
-      showToast('Não foi possível iniciar o verificador de SMS. Recarregue a página.');
-    }
-  };
-
-  useEffect(() => {
-    // Configura o reCAPTCHA apenas uma vez quando a tela de login é exibida
-    if (!showQuickOrder && !state.user) {
-      setupRecaptcha();
-    }
-  }, [showQuickOrder, state.user]);
-
   const sendSMSCode = async () => {
     setIsSending(true);
     let phoneNumber = loginData.phone.replace(/\D/g, '');
@@ -198,14 +171,18 @@ const Authentication = () => {
       phoneNumber = '55' + phoneNumber;
     }
 
-    const verifier = window.recaptchaVerifier;
-    if (!verifier) {
-      showToast('Verificador não encontrado. Tente novamente.');
-      setIsSending(false);
-      return;
-    }
-
     try {
+      // Abordagem mais robusta: criar um novo verificador a cada clique.
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+      }
+      const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // O reCAPTCHA foi resolvido, o envio de SMS pode prosseguir.
+        }
+      });
+      
       const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, verifier);
       setConfirmationResult(result);
       setShowCodeInput(true);
@@ -213,7 +190,9 @@ const Authentication = () => {
     } catch (error) {
       console.error('Erro ao enviar SMS:', error);
       showToast('Erro ao enviar SMS. Verifique o número e tente novamente.');
-      // O Firebase gerencia o reset do reCAPTCHA invisível em caso de erro.
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+      }
     } finally {
       setIsSending(false);
     }
@@ -338,7 +317,7 @@ const Authentication = () => {
 
   return (
     <div className="p-6">
-      {/* O container do reCAPTCHA agora fica aqui, fora do fluxo principal */}
+      {/* O container do reCAPTCHA continua aqui, essencial para o verifier. */}
       <div id="recaptcha-container"></div>
 
       <div className="text-center mb-6">
