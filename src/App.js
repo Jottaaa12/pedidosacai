@@ -145,9 +145,9 @@ const Authentication = () => {
   const [showQuickOrder, setShowQuickOrder] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [showCodeInput, setShowCodeInput] = useState(false);
-  const [recaptchaVerifier, setRecaptchaVerifier] = useState(null);
   const [confirmationResult, setConfirmationResult] = useState(null);
-  
+  const [isSending, setIsSending] = useState(false);
+
   // Dados dos formulários
   const [loginData, setLoginData] = useState({
     phone: '',
@@ -159,56 +159,63 @@ const Authentication = () => {
     phone: ''
   });
 
-  useEffect(() => {
-    // Configurar reCAPTCHA
-    const setupRecaptcha = () => {
-      try {
-        const verifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'normal',
-          'callback': () => {
-            document.getElementById('send-code-btn').disabled = false;
-          },
-          'expired-callback': () => {
-            document.getElementById('send-code-btn').disabled = true;
-          }
-        });
-        setRecaptchaVerifier(verifier);
-        verifier.render();
-      } catch (error) {
-        console.error('Erro ao configurar reCAPTCHA:', error);
-        showToast('Erro ao carregar verificador SMS');
-      }
-    };
-
-    if (!showQuickOrder && !state.user) {
-      setTimeout(setupRecaptcha, 100);
+  // Setup do reCAPTCHA invisível
+  const setupRecaptcha = () => {
+    // Evita múltiplas instâncias. O verifier fica no objeto window
+    // para persistir entre re-renderizações do componente.
+    if (window.recaptchaVerifier) {
+      window.recaptchaVerifier.clear();
     }
-  }, [showQuickOrder, state.user, showToast]);
+    try {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+          // reCAPTCHA resolvido. O envio do SMS é tratado no sendSMSCode.
+        }
+      });
+    } catch (error) {
+      console.error('Erro ao configurar reCAPTCHA:', error);
+      showToast('Não foi possível iniciar o verificador de SMS. Recarregue a página.');
+    }
+  };
+
+  useEffect(() => {
+    // Configura o reCAPTCHA apenas uma vez quando a tela de login é exibida
+    if (!showQuickOrder && !state.user) {
+      setupRecaptcha();
+    }
+  }, [showQuickOrder, state.user]);
 
   const sendSMSCode = async () => {
+    setIsSending(true);
     let phoneNumber = loginData.phone.replace(/\D/g, '');
     if (phoneNumber.length < 10) {
       showToast('Digite um número válido com DDD');
+      setIsSending(false);
       return;
     }
     if (!phoneNumber.startsWith('55')) {
       phoneNumber = '55' + phoneNumber;
     }
 
+    const verifier = window.recaptchaVerifier;
+    if (!verifier) {
+      showToast('Verificador não encontrado. Tente novamente.');
+      setIsSending(false);
+      return;
+    }
+
     try {
-      const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, recaptchaVerifier);
+      const result = await signInWithPhoneNumber(auth, `+${phoneNumber}`, verifier);
       setConfirmationResult(result);
       setShowCodeInput(true);
       showToast('Código SMS enviado com sucesso!');
     } catch (error) {
       console.error('Erro ao enviar SMS:', error);
-      showToast('Erro ao enviar SMS. Tente novamente.');
-      try {
-        recaptchaVerifier.clear();
-        document.getElementById('send-code-btn').disabled = true;
-      } catch (e) {
-        console.error('Erro ao resetar reCAPTCHA', e);
-      }
+      showToast('Erro ao enviar SMS. Verifique o número e tente novamente.');
+      // O Firebase gerencia o reset do reCAPTCHA invisível em caso de erro.
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -331,6 +338,9 @@ const Authentication = () => {
 
   return (
     <div className="p-6">
+      {/* O container do reCAPTCHA agora fica aqui, fora do fluxo principal */}
+      <div id="recaptcha-container"></div>
+
       <div className="text-center mb-6">
         <img 
           src="https://i.imgur.com/9VzcNVM.png" 
@@ -365,16 +375,14 @@ const Authentication = () => {
             />
           </div>
 
-          <div id="recaptcha-container" className="flex justify-center mb-4"></div>
-
           <button
             id="send-code-btn"
             onClick={sendSMSCode}
-            disabled={true}
+            disabled={isSending}
             className="w-full py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-semibold 
               disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all"
           >
-            Enviar SMS de Verificação
+            {isSending ? 'Enviando...' : 'Enviar SMS de Verificação'}
           </button>
 
           {showCodeInput && (
