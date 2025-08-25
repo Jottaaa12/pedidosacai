@@ -4,7 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 import { useToast } from '../hooks/useToast';
-import { ADMIN_PHONE } from '../constants/menu';
+import { ADMIN_PHONE } from '../services/menu';
 import Toast from '../components/ui/Toast';
 
 const AppContext = createContext();
