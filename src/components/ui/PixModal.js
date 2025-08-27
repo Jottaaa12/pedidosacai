@@ -9,12 +9,19 @@ const PixModal = () => {
 
   const generateBrCode = () => {
     const formatField = (id, value) => `${id}${String(value).length.toString().padStart(2, '0')}${value}`;
+    const baseTotal = state.payment?.baseTotal || 0;
+    
+    if (baseTotal <= 0) {
+      console.error('Valor do pedido inválido para o Pix.');
+      return '';
+    }
+
     const payload = [
       formatField('00', '01'),
       formatField('26', `${formatField('00', 'br.gov.bcb.pix')}${formatField('01', '+5588981905006')}`),
       formatField('52', '0000'),
       formatField('53', '986'),
-      formatField('54', state.payment.baseTotal.toFixed(2)),
+      formatField('54', baseTotal.toFixed(2)),
       formatField('58', 'BR'),
       formatField('59', 'JOAO PEDRO CARVALHO TORRE'.substring(0, 25)),
       formatField('60', 'BARROQUINHA'),
@@ -25,7 +32,7 @@ const PixModal = () => {
   };
   
   useEffect(() => {
-    if (state.showPixModal && state.payment.baseTotal > 0) {
+    if (state.showPixModal && state.payment?.baseTotal > 0) {
       const generateQRCode = async () => {
         try {
           const brCode = generateBrCode();
@@ -38,8 +45,7 @@ const PixModal = () => {
       };
       generateQRCode();
     }
-  }, [state.showPixModal, state.payment.baseTotal, showToast]);
-
+  }, [state.showPixModal, state.payment?.baseTotal, showToast]);
 
   if (!state.showPixModal) return null;
 
@@ -54,7 +60,7 @@ const PixModal = () => {
           <p>Gerando QR Code...</p>
         )}
         
-        <p className="mb-2">Valor: <strong>R$ {state.payment.baseTotal.toFixed(2)}</strong></p>
+        <p className="mb-2">Valor: <strong>R$ {state.payment?.baseTotal?.toFixed(2) || '0.00'}</strong></p>
         <p className="text-xs text-gray-600 mb-4 break-all">Chave: 88981905006</p>
         
         <button
