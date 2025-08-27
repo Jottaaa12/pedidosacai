@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import OrderCard from '../components/OrderCard';
 import OrderDetailsModal from '../components/OrderDetailsModal';
@@ -31,20 +31,18 @@ const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    // Esta consulta é mais eficiente, mas precisa do índice criado no Firebase.
+    // CORREÇÃO: Removido o filtro de status para incluir 'Finalizado' e 'Cancelado'
     const q = query(
-        collection(db, 'pedidos'), 
-        where('status', 'not-in', ['Finalizado', 'Cancelado']),
-        orderBy('status'), 
+        collection(db, 'pedidos'),
         orderBy('dataDoPedido', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const activeOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const allOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       const newColumns = generateInitialColumns();
 
-      activeOrders.forEach(order => {
+      allOrders.forEach(order => {
         const status = order.status && columnConfig[order.status] ? order.status : 'Novo';
         if (newColumns[status]) {
             newColumns[status].orders.push(order);
@@ -54,7 +52,7 @@ const AdminDashboard = () => {
       setColumns(newColumns);
       setLoading(false);
     }, (error) => {
-      console.error("Erro ao buscar pedidos (verifique se o índice do Firebase foi criado): ", error);
+      console.error("Erro ao buscar pedidos: ", error);
       setLoading(false);
     });
 

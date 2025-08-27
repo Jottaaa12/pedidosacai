@@ -30,10 +30,10 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Pagamento</h3>
-            {/* CORREÇÃO: Usando o objeto 'pagamento' */}
-            <p><strong>Método:</strong> {pagamento.method}</p>
-            {pagamento.cashChange && <p><strong>Troco para:</strong> R$ {pagamento.cashChange}</p>}
-            <p className="font-bold text-xl mt-2">Total: R$ {pagamento.finalTotal.toFixed(2)}</p>
+            {/* CORREÇÃO: Usando o objeto 'pagamento' e tratando valor nulo */}
+            <p><strong>Método:</strong> {pagamento?.method}</p>
+            {pagamento?.cashChange && <p><strong>Troco para:</strong> R$ {pagamento.cashChange}</p>}
+            <p className="font-bold text-xl mt-2">Total: R$ {pagamento?.finalTotal?.toFixed(2) || '0.00'}</p>
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Itens do Pedido</h3>
