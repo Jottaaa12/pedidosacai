@@ -15,17 +15,28 @@ const ProductBuilder = () => {
     const unsubscribe = onSnapshot(menuRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        // CORREÇÃO: Simplificada a lógica de processamento de dados para tratar `sizes` corretamente.
         const processedData = {};
         Object.keys(data).forEach(key => {
             if (Array.isArray(data[key])) {
-                if (data[key].length > 0 && typeof data[key][0] === 'string') {
-                    processedData[key] = data[key].map(item => ({ name: item, status: 'ativado' }));
+                // Para 'sizes', apenas garantimos que o status exista.
+                if (key === 'sizes') {
+                    processedData[key] = data[key].map(item => ({
+                        ...item,
+                        status: item.status || 'ativado'
+                    }));
                 } else {
-                    processedData[key] = data[key].map(item => 
-                        (typeof item === 'object' && item !== null && item.name) 
-                            ? { ...item, status: item.status || 'ativado' } 
-                            : { name: item, status: 'ativado' }
-                    );
+                    // Para outras categorias, garantimos o formato { name, status }
+                    processedData[key] = data[key].map(item => {
+                        if (typeof item === 'string') {
+                            return { name: item, status: 'ativado' };
+                        }
+                        if (typeof item === 'object' && item !== null && item.name) {
+                            return { ...item, status: item.status || 'ativado' };
+                        }
+                        // Caso inesperado, apenas retorna o item
+                        return item;
+                    });
                 }
             } else {
                 processedData[key] = data[key];
@@ -105,7 +116,6 @@ const ProductBuilder = () => {
           <>
             <h2 className="text-xl font-semibold text-primary mb-4">📦 Escolha o tamanho</h2>
             <div className="space-y-3 mb-6">
-              {/* CORREÇÃO: Adicionado filtro para não mostrar tamanhos 'desativado' e desabilitar os 'indisponivel' */}
               {menuOptions.sizes.filter(item => item.status !== 'desativado').map((size, index) => (
                 <label 
                     key={index} 
