@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-// MELHORIA: Adicionado 'where' para filtrar a busca de pedidos
 import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import OrderCard from '../components/OrderCard';
@@ -16,28 +15,34 @@ const columnConfig = {
 
 const columnOrder = ['Novo', 'Em Preparo', 'Saiu para Entrega', 'Finalizado', 'Cancelado'];
 
+// CORREÇÃO: Função para gerar o estado inicial das colunas
+const generateInitialColumns = () => {
+    return columnOrder.reduce((acc, status) => {
+        acc[status] = { ...columnConfig[status], orders: [] };
+        return acc;
+    }, {});
+};
+
+
 const AdminDashboard = () => {
-  const [columns, setColumns] = useState(null);
+  // CORREÇÃO: O estado é inicializado com a estrutura de colunas, não como nulo.
+  const [columns, setColumns] = useState(generateInitialColumns());
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    // MELHORIA: A consulta agora busca apenas pedidos que NÃO estão finalizados ou cancelados.
-    // Isso torna o painel muito mais rápido e eficiente à medida que o número de pedidos aumenta.
+    // Esta consulta é mais eficiente, mas precisa do índice criado no Firebase.
     const q = query(
         collection(db, 'pedidos'), 
         where('status', 'not-in', ['Finalizado', 'Cancelado']),
-        orderBy('status'), // Ordenar por status pode ajudar na organização
+        orderBy('status'), 
         orderBy('dataDoPedido', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const activeOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      const newColumns = columnOrder.reduce((acc, status) => {
-        acc[status] = { ...columnConfig[status], orders: [] };
-        return acc;
-      }, {});
+      const newColumns = generateInitialColumns();
 
       activeOrders.forEach(order => {
         const status = order.status && columnConfig[order.status] ? order.status : 'Novo';
@@ -49,7 +54,7 @@ const AdminDashboard = () => {
       setColumns(newColumns);
       setLoading(false);
     }, (error) => {
-      console.error("Erro ao buscar pedidos: ", error);
+      console.error("Erro ao buscar pedidos (verifique se o índice do Firebase foi criado): ", error);
       setLoading(false);
     });
 
@@ -63,10 +68,8 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Guarda o estado original para o caso de erro
     const originalColumns = { ...columns };
 
-    // Atualização otimista da UI
     const startColumn = columns[source.droppableId];
     const endColumn = columns[destination.droppableId];
     const startOrders = Array.from(startColumn.orders);
@@ -83,18 +86,15 @@ const AdminDashboard = () => {
         newColumnsState[source.droppableId] = { ...startColumn, orders: startOrders };
         newColumnsState[destination.droppableId] = { ...endColumn, orders: endOrders };
     }
-    setColumns(newColumnsState); // Aplica a mudança na tela imediatamente
+    setColumns(newColumnsState);
 
-    // Tenta atualizar no Firestore
     try {
         const orderRef = doc(db, 'pedidos', draggableId);
         await updateDoc(orderRef, { status: destination.droppableId });
     } catch (error) {
         console.error("Erro ao atualizar o status do pedido:", error);
-        // CORREÇÃO: Se a atualização no banco de dados falhar,
-        // a tela é revertida para o estado original, evitando inconsistências.
         alert("Não foi possível atualizar o pedido. Tente novamente.");
-        setColumns(originalColumns);
+        setColumns(originalColumns); // Reverte a UI em caso de erro
     }
   };
 

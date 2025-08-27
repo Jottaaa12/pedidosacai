@@ -15,18 +15,15 @@ const ProductBuilder = () => {
     const unsubscribe = onSnapshot(menuRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // CORREÇÃO: Simplificada a lógica de processamento de dados para tratar `sizes` corretamente.
         const processedData = {};
         Object.keys(data).forEach(key => {
             if (Array.isArray(data[key])) {
-                // Para 'sizes', apenas garantimos que o status exista.
                 if (key === 'sizes') {
                     processedData[key] = data[key].map(item => ({
                         ...item,
                         status: item.status || 'ativado'
                     }));
                 } else {
-                    // Para outras categorias, garantimos o formato { name, status }
                     processedData[key] = data[key].map(item => {
                         if (typeof item === 'string') {
                             return { name: item, status: 'ativado' };
@@ -34,7 +31,6 @@ const ProductBuilder = () => {
                         if (typeof item === 'object' && item !== null && item.name) {
                             return { ...item, status: item.status || 'ativado' };
                         }
-                        // Caso inesperado, apenas retorna o item
                         return item;
                     });
                 }
@@ -120,19 +116,20 @@ const ProductBuilder = () => {
                 <label 
                     key={index} 
                     className={`flex items-center p-3 border rounded-lg cursor-pointer 
-                        ${currentAcai.size?.label === size.label ? 'border-primary bg-purple-50' : ''}
+                        ${(currentAcai.size?.label || currentAcai.size?.name) === (size.label || size.name) ? 'border-primary bg-purple-50' : ''}
                         ${size.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`
                     }
                 >
                   <input 
                     type="radio" 
                     name="size" 
-                    checked={currentAcai.size?.label === size.label} 
+                    checked={(currentAcai.size?.label || currentAcai.size?.name) === (size.label || size.name)} 
                     onChange={() => updateCurrentAcai({ ...currentAcai, size })} 
                     className="mr-3"
                     disabled={size.status === 'indisponivel'}
                   />
-                  {size.label} {size.status === 'indisponivel' && '(Indisponível)'}
+                  {/* CORREÇÃO APLICADA ABAIXO */}
+                  {size.label || size.name} {size.price ? ` - R$ ${size.price.toFixed(2)}` : ''} {size.status === 'indisponivel' && '(Indisponível)'}
                 </label>
               ))}
             </div>

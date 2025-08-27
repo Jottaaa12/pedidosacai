@@ -10,33 +10,38 @@ const OrderSummary = () => {
   const generateSummary = () => {
     const { customerName, customerPhone, cart, delivery, payment } = state;
     let summary = [`*Novo Pedido - Açaí Sabor da Terra*`, `*Nome:* ${customerName}`, `*Telefone:* ${customerPhone}`, '---'];
+    
     cart.forEach((item, i) => {
-      summary.push(`*COPO ${i + 1}*`, `- *Tamanho:* ${item.size.label}`);
-      if(item.creams.length) summary.push(`- *Cremes:* ${item.creams.join(', ')}`);
-      if(item.toppings.length) summary.push(`- *Acompanhamentos:* ${item.toppings.join(', ')}`);
-      if(item.fruits.length) summary.push(`- *Frutas:* ${item.fruits.join(', ')}`);
-      if(item.syrup !== 'Sem cobertura') summary.push(`- *Cobertura:* ${item.syrup}`);
+      summary.push(`*COPO ${i + 1}*`, `- *Tamanho:* ${item.size.label || item.size.name}`);
+      
+      // CORREÇÃO APLICADA ABAIXO
+      if(item.creams.length) summary.push(`- *Cremes:* ${item.creams.map(c => c.name).join(', ')}`);
+      if(item.toppings.length) summary.push(`- *Acompanhamentos:* ${item.toppings.map(t => t.name).join(', ')}`);
+      if(item.fruits.length) summary.push(`- *Frutas:* ${item.fruits.map(f => f.name).join(', ')}`);
+      if(item.syrup && item.syrup.name !== 'Sem cobertura') summary.push(`- *Cobertura:* ${item.syrup.name}`);
+      
       if(item.notes) summary.push(`- *Obs:* ${item.notes}`);
       summary.push('---');
     });
+
     let deliveryLocation = delivery.college === 'UNINASSAU' ? `${delivery.college} - ${delivery.block} - ${delivery.room}` : delivery.college;
     const deliveryTime = delivery.date ? `para ${new Date(delivery.date).toLocaleDateString('pt-BR')}` : `às ${delivery.time}`;
     summary.push(`*Entrega:* ${deliveryLocation} ${deliveryTime}`);
+    
     let paymentLine = `*Pagamento:* ${payment.method}`;
     if(payment.cashChange) paymentLine += ` (Troco para R$ ${payment.cashChange})`;
     summary.push(paymentLine, `*Total: R$ ${payment.finalTotal.toFixed(2)}*`);
     if (payment.method === 'Pix') summary.push('*Chave Pix (Celular):* 88981905006');
+    
     return summary.join('\n');
   };
 
   const sendToWhatsApp = async () => {
     try {
-      // CORREÇÃO: Adicionado 'clienteTelefone' e garantido que 'clienteNome' está correto
-      // para coincidir com o que o painel de admin espera.
       await addDoc(collection(db, 'pedidos'), {
         clienteId: state.user?.uid || null,
         clienteNome: state.customerName,
-        clienteTelefone: state.customerPhone, // Adicionado este campo
+        clienteTelefone: state.customerPhone, // Campo adicionado para consistência
         dataDoPedido: serverTimestamp(),
         carrinho: state.cart,
         entrega: state.delivery,
