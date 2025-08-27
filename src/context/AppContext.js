@@ -68,5 +68,3 @@ const AppProvider = ({ children }) => {
 };
 
 export { AppContext, AppProvider };
-
-export { AppContext, AppProvider };
