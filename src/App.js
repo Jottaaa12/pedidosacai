@@ -8,7 +8,6 @@ import DeliveryForm from './components/DeliveryForm';
 import Payment from './components/Payment';
 import OrderSummary from './components/OrderSummary';
 import AdminPanel from './components/AdminPanel';
-import MyOrders from './components/MyOrders';
 
 // Importa componentes da UI
 import CartIndicator from './components/ui/CartIndicator';
@@ -21,7 +20,6 @@ const MainApp = () => {
 
     const renderCurrentView = () => {
         if (state.currentView === 'admin') return <AdminPanel />;
-        if (state.currentView === 'myOrders') return <MyOrders />;
 
         switch (state.currentStep) {
             case 1: return <Authentication />;
