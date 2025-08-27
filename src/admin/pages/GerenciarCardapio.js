@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../../services/firebase';
 import { doc, onSnapshot, updateDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
@@ -57,6 +56,7 @@ const GerenciarCardapio = () => {
         const unsubscribe = onSnapshot(menuRef, async (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                // A migração é verificada a cada load para garantir a consistência dos dados
                 await handleDataMigration(data);
                 setMenu(data);
             } else {
@@ -71,7 +71,7 @@ const GerenciarCardapio = () => {
         });
 
         return () => unsubscribe();
-    }, [handleDataMigration]);
+    }, [handleDataMigration, menuRef]);
 
     const handleAddItem = async (category) => {
         if (!newItem[category] || !menu) return;
@@ -85,7 +85,7 @@ const GerenciarCardapio = () => {
     };
 
     const handleRemoveItem = async (category, item) => {
-        if (!window.confirm(`Tem certeza que deseja remover "${item.name}" permanentemente?`) || !menu) return;
+        if (!window.confirm(`Tem certeza que deseja remover "${item.name || item.label}" permanentemente?`) || !menu) return;
         try {
             await updateDoc(menuRef, { [category]: arrayRemove(item) });
         } catch (error) {
@@ -93,15 +93,25 @@ const GerenciarCardapio = () => {
         }
     };
 
-    const handleStatusChange = async (category, itemNameToUpdate, newStatus) => {
+    // CÓDIGO CORRIGIDO: Função de atualização de status mais eficiente
+    const handleStatusChange = async (category, itemIdentifier, newStatus) => {
         if (!menu) return;
-        const updatedCategory = menu[category].map(item => 
-            item.name === itemNameToUpdate ? { ...item, status: newStatus } : item
-        );
-        try {
-            await updateDoc(menuRef, { [category]: updatedCategory });
-        } catch (error) {
-            console.error(`Error updating status in ${category}:`, error);
+        
+        // Usamos uma cópia para não modificar o estado diretamente
+        const categoryClone = [...menu[category]];
+        
+        // Encontra o índice do item a ser atualizado (funciona para 'name' ou 'label')
+        const itemIndex = categoryClone.findIndex(item => (item.name || item.label) === itemIdentifier);
+
+        // Se o item for encontrado, atualiza seu status
+        if (itemIndex > -1) {
+            categoryClone[itemIndex] = { ...categoryClone[itemIndex], status: newStatus };
+            try {
+                // Envia a categoria inteira atualizada para o Firestore
+                await updateDoc(menuRef, { [category]: categoryClone });
+            } catch (error) {
+                console.error(`Error updating status in ${category}:`, error);
+            }
         }
     };
     
@@ -115,33 +125,33 @@ const GerenciarCardapio = () => {
     };
 
     const renderCategorySection = (title, category) => (
-        <div className="mb-8 p-4 border rounded-lg shadow-sm">
+        <div className="mb-8 p-4 border rounded-lg shadow-sm bg-white">
             <h3 className="text-xl font-semibold mb-4">{title}</h3>
             <div className="flex mb-4">
                 <input
                     type="text"
                     value={newItem[category]}
                     onChange={(e) => setNewItem({ ...newItem, [category]: e.target.value })}
-                    className="flex-grow p-2 border rounded-l-md"
+                    className="flex-grow p-2 border rounded-l-md focus:ring-2 focus:ring-blue-500 outline-none"
                     placeholder={`Adicionar ${title.slice(0, -1).toLowerCase()}`}
                 />
-                <button onClick={() => handleAddItem(category)} className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600"><FaPlus /></button>
+                <button onClick={() => handleAddItem(category)} className="bg-blue-500 text-white p-2 rounded-r-md hover:bg-blue-600 transition-colors"><FaPlus /></button>
             </div>
             <ul className="space-y-2">
                 {menu[category] && menu[category].map((item, index) => (
                     <li key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded-md">
-                        <span>{item.name}</span>
+                        <span>{item.name || item.label}</span>
                         <div className="flex items-center">
                             <select 
                                 value={item.status}
-                                onChange={(e) => handleStatusChange(category, item.name, e.target.value)}
-                                className="p-1 border rounded-md text-sm mr-3"
+                                onChange={(e) => handleStatusChange(category, item.name || item.label, e.target.value)}
+                                className="p-1 border rounded-md text-sm mr-3 bg-white"
                             >
                                 <option value="ativado">Ativado</option>
                                 <option value="indisponivel">Indisponível</option>
                                 <option value="desativado">Desativado</option>
                             </select>
-                            <button onClick={() => handleRemoveItem(category, item)} className="text-gray-600 hover:text-red-500"><FaTrash /></button>
+                            <button onClick={() => handleRemoveItem(category, item)} className="text-gray-600 hover:text-red-500 transition-colors"><FaTrash /></button>
                         </div>
                     </li>
                 ))}
@@ -149,16 +159,28 @@ const GerenciarCardapio = () => {
         </div>
     );
     
-    // A seção de tamanhos por enquanto não terá o gerenciamento de status
+    // A seção de tamanhos agora também permite a edição de status
     const renderSizesSection = () => (
-        <div className="mb-8 p-4 border rounded-lg shadow-sm">
+        <div className="mb-8 p-4 border rounded-lg shadow-sm bg-white">
             <h3 className="text-xl font-semibold mb-4">Tamanhos</h3>
-            <p className="text-sm text-gray-500 mb-4">A edição de tamanhos e preços não está disponível nesta versão.</p>
-            <ul className="space-y-2">
+             <ul className="space-y-2">
                 {menu.sizes && menu.sizes.map((size, index) => (
                     <li key={index} className="flex items-center justify-between p-2 bg-gray-100 rounded-md">
-                        <span>{size.label}</span>
-                        <span>R$ {size.price ? size.price.toFixed(2) : 'N/A'}</span>
+                        <div>
+                           <span>{size.label}</span>
+                           {size.price && <span className="text-gray-600 ml-2">R$ {size.price.toFixed(2)}</span>}
+                        </div>
+                        <div className="flex items-center">
+                            <select 
+                                value={size.status}
+                                onChange={(e) => handleStatusChange('sizes', size.label, e.target.value)}
+                                className="p-1 border rounded-md text-sm"
+                            >
+                                <option value="ativado">Ativado</option>
+                                <option value="indisponivel">Indisponível</option>
+                                <option value="desativado">Desativado</option>
+                            </select>
+                        </div>
                     </li>
                 ))}
             </ul>

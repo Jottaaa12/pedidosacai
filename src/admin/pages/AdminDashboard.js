@@ -21,27 +21,25 @@ const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    // CORREÇÃO: Ordenando por 'dataDoPedido' em vez de 'timestamp'
     const q = query(collection(db, 'pedidos'), orderBy('dataDoPedido', 'desc'));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const allOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // Inicializa as colunas com base na configuração
-      const newColumns = {};
-      columnOrder.forEach(status => {
-        newColumns[status] = {
-          ...columnConfig[status],
-          orders: [],
-        };
-      });
-
-      // Distribui os pedidos nas colunas corretas
-      allOrders.forEach(order => {
-        if (newColumns[order.status]) {
-          newColumns[order.status].orders.push(order);
-        }
-      });
+      // CÓDIGO CORRIGIDO: Usando 'reduce' para organizar os pedidos de forma mais eficiente
+      const newColumns = allOrders.reduce((acc, order) => {
+        // Garante que pedidos sem status ou com status inválido caiam na coluna 'Novo'
+        const status = order.status && columnConfig[order.status] ? order.status : 'Novo';
+        
+        // Adiciona o pedido à lista de pedidos da coluna correspondente
+        acc[status].orders.push(order);
+        return acc;
+      }, 
+      // Objeto inicial para o reduce, com todas as colunas já criadas e vazias
+      columnOrder.reduce((acc, status) => {
+        acc[status] = { ...columnConfig[status], orders: [] };
+        return acc;
+      }, {}));
 
       setColumns(newColumns);
       setLoading(false);
@@ -56,41 +54,49 @@ const AdminDashboard = () => {
   const onDragEnd = async (result) => {
     const { destination, source, draggableId } = result;
 
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
+        return;
+    }
 
     const startColumn = columns[source.droppableId];
     const endColumn = columns[destination.droppableId];
-
-    // Atualização otimista da UI
     const startOrders = Array.from(startColumn.orders);
     const [movedOrder] = startOrders.splice(source.index, 1);
 
-    const newColumns = { ...columns };
+    const newColumnsState = { ...columns };
 
+    // Se movendo na mesma coluna
     if (startColumn === endColumn) {
-      // Movendo dentro da mesma coluna
-      startOrders.splice(destination.index, 0, movedOrder);
-      newColumns[source.droppableId] = { ...startColumn, orders: startOrders };
+        startOrders.splice(destination.index, 0, movedOrder);
+        newColumnsState[source.droppableId] = { ...startColumn, orders: startOrders };
     } else {
-      // Movendo para uma coluna diferente
-      const endOrders = Array.from(endColumn.orders);
-      endOrders.splice(destination.index, 0, movedOrder);
-      newColumns[source.droppableId] = { ...startColumn, orders: startOrders };
-      newColumns[destination.droppableId] = { ...endColumn, orders: endOrders };
-      
-      // Atualiza o status no Firestore
-      const orderRef = doc(db, 'pedidos', draggableId);
-      await updateDoc(orderRef, { status: destination.droppableId });
+        // Movendo para uma coluna diferente
+        const endOrders = Array.from(endColumn.orders);
+        endOrders.splice(destination.index, 0, movedOrder);
+        newColumnsState[source.droppableId] = { ...startColumn, orders: startOrders };
+        newColumnsState[destination.droppableId] = { ...endColumn, orders: endOrders };
+
+        // Atualiza o status do pedido no Firestore
+        try {
+            const orderRef = doc(db, 'pedidos', draggableId);
+            await updateDoc(orderRef, { status: destination.droppableId });
+        } catch (error) {
+            console.error("Erro ao atualizar o status do pedido:", error);
+            // Opcional: Reverter a UI em caso de erro
+        }
     }
 
-    setColumns(newColumns);
+    setColumns(newColumnsState);
   };
 
   const handleDeleteOrder = async (orderId) => {
     if (window.confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este pedido?')) {
-      await deleteDoc(doc(db, 'pedidos', orderId));
-      setSelectedOrder(null); // Fecha o modal
+      try {
+        await deleteDoc(doc(db, 'pedidos', orderId));
+        setSelectedOrder(null); // Fecha o modal após a exclusão
+      } catch (error) {
+          console.error("Erro ao excluir o pedido:", error);
+      }
     }
   };
 
@@ -108,8 +114,8 @@ const AdminDashboard = () => {
             if (!column) return null;
 
             return (
-              <div key={columnId} className="bg-gray-100 rounded-lg flex flex-col">
-                <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color}`}>
+              <div key={columnId} className="bg-gray-100 rounded-lg flex flex-col max-h-[85vh]">
+                <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color} sticky top-0 z-10`}>
                   <h2 className="font-bold text-white">{column.title}</h2>
                   <span className="text-sm font-semibold text-white bg-white/30 rounded-full px-2 py-0.5">
                     {column.orders.length}
@@ -120,7 +126,7 @@ const AdminDashboard = () => {
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`p-3 pt-4 flex-grow transition-colors ${snapshot.isDraggingOver ? 'bg-gray-200' : ''}`}
+                      className={`p-3 pt-4 flex-grow transition-colors overflow-y-auto ${snapshot.isDraggingOver ? 'bg-blue-100' : ''}`}
                     >
                       {column.orders.length > 0 ? (
                         column.orders.map((order, index) => (

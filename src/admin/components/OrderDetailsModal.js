@@ -3,7 +3,8 @@ import React from 'react';
 const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
   if (!order) return null;
 
-  const { userName, userPhone, cart, deliveryInfo, paymentInfo, total } = order;
+  // CORREÇÃO: Utilizando as propriedades corretas do objeto 'order'
+  const { clienteNome, clienteTelefone, carrinho, entrega, pagamento } = order;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
@@ -16,32 +17,36 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Cliente</h3>
-            <p><strong>Nome:</strong> {userName}</p>
-            <p><strong>Telefone:</strong> {userPhone}</p>
+            {/* CORREÇÃO: Usando 'clienteNome' e 'clienteTelefone' */}
+            <p><strong>Nome:</strong> {clienteNome}</p>
+            <p><strong>Telefone:</strong> {clienteTelefone || 'Não informado'}</p>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Entrega</h3>
-            <p><strong>Local:</strong> {deliveryInfo.location}</p>
-            <p><strong>Detalhes:</strong> {deliveryInfo.details}</p>
-            <p><strong>Horário:</strong> {deliveryInfo.time}</p>
+            {/* CORREÇÃO: Usando o objeto 'entrega' */}
+            <p><strong>Local:</strong> {entrega.college}</p>
+            <p><strong>Detalhes:</strong> {entrega.block} {entrega.room} {entrega.ufdparDetails} {entrega.otherDetails}</p>
+            <p><strong>Horário:</strong> {entrega.time || new Date(entrega.date).toLocaleDateString('pt-BR')}</p>
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Pagamento</h3>
-            <p><strong>Método:</strong> {paymentInfo.method}</p>
-            {paymentInfo.change && <p><strong>Troco para:</strong> R$ {paymentInfo.change}</p>}
-            <p className="font-bold text-xl mt-2">Total: R$ {total.toFixed(2)}</p>
+            {/* CORREÇÃO: Usando o objeto 'pagamento' */}
+            <p><strong>Método:</strong> {pagamento.method}</p>
+            {pagamento.cashChange && <p><strong>Troco para:</strong> R$ {pagamento.cashChange}</p>}
+            <p className="font-bold text-xl mt-2">Total: R$ {pagamento.finalTotal.toFixed(2)}</p>
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Itens do Pedido</h3>
-            {cart.map((item, index) => (
+            {/* CORREÇÃO: Usando o objeto 'carrinho' */}
+            {carrinho.map((item, index) => (
               <div key={index} className="mb-4 p-2 border rounded">
-                <p className="font-semibold">{item.name} ({item.size})</p>
+                <p className="font-semibold">{item.size.label}</p>
                 <ul className="list-disc list-inside text-sm text-gray-700">
-                  {item.cremes && <li><strong>Cremes:</strong> {item.cremes.join(', ')}</li>}
-                  {item.acompanhamentos && <li><strong>Acompanhamentos:</strong> {item.acompanhamentos.join(', ')}</li>}
-                  {item.frutas && <li><strong>Frutas:</strong> {item.frutas.join(', ')}</li>}
-                  {item.cobertura && <li><strong>Cobertura:</strong> {item.cobertura}</li>}
-                  {item.observacoes && <li className="mt-1"><strong>Observações:</strong> {item.observacoes}</li>}
+                  {item.creams && item.creams.length > 0 && <li><strong>Cremes:</strong> {item.creams.map(c => c.name).join(', ')}</li>}
+                  {item.toppings && item.toppings.length > 0 && <li><strong>Acompanhamentos:</strong> {item.toppings.map(t => t.name).join(', ')}</li>}
+                  {item.fruits && item.fruits.length > 0 && <li><strong>Frutas:</strong> {item.fruits.map(f => f.name).join(', ')}</li>}
+                  {item.syrup && item.syrup !== 'Sem cobertura' && <li><strong>Cobertura:</strong> {item.syrup.name || item.syrup}</li>}
+                  {item.notes && <li className="mt-1"><strong>Observações:</strong> {item.notes}</li>}
                 </ul>
               </div>
             ))}
