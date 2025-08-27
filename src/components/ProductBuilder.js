@@ -1,39 +1,53 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { db } from '../services/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const ProductBuilder = () => {
   const { state, dispatch, showToast } = useContext(AppContext);
   const { currentAcai } = state;
-  const [menuOptions, setMenuOptions] = useState({
-    sizes: [],
-    creams: [],
-    toppings: [],
-    fruits: [],
-    syrups: [],
-  });
+  const [menuOptions, setMenuOptions] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const menuRef = doc(db, 'cardapio', 'opcoes');
-        const docSnap = await getDoc(menuRef);
-        if (docSnap.exists()) {
-          setMenuOptions(docSnap.data());
-        } else {
-          console.log("No menu data found in Firestore!");
-          // Optionally, set fallback data or show an error
-        }
-      } catch (error) {
-        console.error("Error fetching menu:", error);
-      } finally {
-        setLoading(false);
+    const menuRef = doc(db, 'cardapio', 'opcoes');
+    
+    const unsubscribe = onSnapshot(menuRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        // Processa os dados para garantir que estão no formato de objeto com status
+        const processedData = {};
+        Object.keys(data).forEach(key => {
+            if (Array.isArray(data[key])) {
+                // Se for um array de strings (formato antigo), converte para objetos
+                if (data[key].length > 0 && typeof data[key][0] === 'string') {
+                    processedData[key] = data[key].map(item => ({ name: item, status: 'ativado' }));
+                } else {
+                    // Se já for array de objetos, garante que tem status ou adiciona 'ativado'
+                    processedData[key] = data[key].map(item => 
+                        (typeof item === 'object' && item !== null && item.name) 
+                            ? { ...item, status: item.status || 'ativado' } 
+                            : { name: item, status: 'ativado' } // Caso algum item seja string solta
+                    );
+                }
+            } else {
+                processedData[key] = data[key];
+            }
+        });
+        setMenuOptions(processedData);
+      } else {
+        console.log("No menu data found in Firestore!");
+        // O documento é criado no painel de admin, então aqui só precisamos aguardar.
+        setMenuOptions({ sizes: [], creams: [], toppings: [], fruits: [], syrups: [] });
       }
-    };
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching menu with snapshot:", error);
+      setLoading(false);
+    });
 
-    fetchMenu();
+    // Cleanup: parar de ouvir quando o componente for desmontado
+    return () => unsubscribe();
   }, []);
 
   const updateCurrentAcai = (updatedAcai) => {
@@ -41,12 +55,20 @@ const ProductBuilder = () => {
   };
 
   const handleItemToggle = (category, item) => {
+    // Impede seleção de itens indisponíveis
+    if (item.status === 'indisponivel') {
+        showToast(`${item.name} está indisponível.`);
+        return;
+    }
+
     const maxLimits = { creams: 2, fruits: 2 };
     const currentList = currentAcai[category];
 
-    if (currentList.includes(item)) {
-      updateCurrentAcai({ ...currentAcai, [category]: currentList.filter(i => i !== item) });
+    // Verifica se o item já está na lista (para remover)
+    if (currentList.some(selectedItem => selectedItem.name === item.name)) {
+      updateCurrentAcai({ ...currentAcai, [category]: currentList.filter(selectedItem => selectedItem.name !== item.name) });
     } else {
+      // Verifica limites para adicionar
       const limit = maxLimits[category];
       if (limit && currentList.length >= limit) {
         showToast(`Máximo ${limit} ${category === 'creams' ? 'cremes' : 'frutas'}`);
@@ -64,19 +86,25 @@ const ProductBuilder = () => {
       if (isNaN(customPrice) || customPrice < 26 || customPrice > 50) { showToast('Valor entre R$ 26 e R$ 50'); return; }
       finalAcai.size = { label: `Valor de R$ ${customPrice.toFixed(2)}`, price: customPrice };
     }
-    finalAcai.additionalToppingCost = Math.max(0, currentAcai.toppings.length - 4) * 1.00;
+    // Garante que os acompanhamentos no carrinho são objetos com name e status
+    finalAcai.toppings = finalAcai.toppings.map(topping => 
+        (typeof topping === 'object' && topping !== null && topping.name) ? topping : { name: topping, status: 'ativado' }
+    );
+    finalAcai.additionalToppingCost = Math.max(0, finalAcai.toppings.length - 4) * 1.00;
     dispatch({ type: 'ADD_TO_CART', payload: finalAcai });
     dispatch({ type: 'SHOW_CART_MODAL' });
     dispatch({ type: 'RESET_CURRENT_ACAI' });
   };
   
   const surpriseMe = () => {
-    const selected = [...menuOptions.toppings].sort(() => 0.5 - Math.random()).slice(0, 4);
+    // Filtra apenas os acompanhamentos ativados para a surpresa
+    const availableToppings = menuOptions.toppings.filter(item => item.status === 'ativado');
+    const selected = [...availableToppings].sort(() => 0.5 - Math.random()).slice(0, 4);
     updateCurrentAcai({ ...currentAcai, toppings: selected });
     showToast('Combo surpresa selecionado! 🎲');
   };
 
-  if (loading) {
+  if (loading || !menuOptions) {
     return <div className="p-6 text-center">Carregando opções do cardápio...</div>;
   }
 
@@ -103,9 +131,21 @@ const ProductBuilder = () => {
           <>
             <h2 className="text-xl font-semibold text-primary mb-4">🍦 Cremes (até 2)</h2>
             <div className="space-y-3 mb-6">
-              {menuOptions.creams.map((cream) => (
-                <label key={cream} className={`flex items-center p-3 border rounded-lg cursor-pointer ${currentAcai.creams.includes(cream) ? 'border-primary bg-purple-50' : ''}`}>
-                  <input type="checkbox" checked={currentAcai.creams.includes(cream)} onChange={() => handleItemToggle('creams', cream)} className="mr-3"/>{cream}
+              {menuOptions.creams.filter(item => item.status !== 'desativado').map((cream) => (
+                <label 
+                    key={cream.name} 
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer 
+                        ${currentAcai.creams.some(selectedCream => selectedCream.name === cream.name) ? 'border-primary bg-purple-50' : ''} 
+                        ${cream.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <input 
+                    type="checkbox" 
+                    checked={currentAcai.creams.some(selectedCream => selectedCream.name === cream.name)} 
+                    onChange={() => handleItemToggle('creams', cream)} 
+                    className="mr-3"
+                    disabled={cream.status === 'indisponivel'}
+                  />
+                  {cream.name} {cream.status === 'indisponivel' && '(Indisponível)'}
                 </label>
               ))}
             </div>
@@ -121,9 +161,21 @@ const ProductBuilder = () => {
               </div>
               <p className="text-center text-sm mb-4">{extraToppings > 0 ? `Adicionais: ${extraToppings} (R$ ${extraToppings.toFixed(2)})` : `Você tem ${4 - currentAcai.toppings.length} grátis.`}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
-                {menuOptions.toppings.map((topping) => (
-                  <label key={topping} className={`flex items-center p-3 border rounded-lg ${currentAcai.toppings.includes(topping) ? 'border-primary bg-purple-50' : ''}`}>
-                    <input type="checkbox" checked={currentAcai.toppings.includes(topping)} onChange={() => handleItemToggle('toppings', topping)} className="mr-3"/>{topping}
+                {menuOptions.toppings.filter(item => item.status !== 'desativado').map((topping) => (
+                  <label 
+                    key={topping.name} 
+                    className={`flex items-center p-3 border rounded-lg 
+                        ${currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name) ? 'border-primary bg-purple-50' : ''} 
+                        ${topping.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <input 
+                        type="checkbox" 
+                        checked={currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name)} 
+                        onChange={() => handleItemToggle('toppings', topping)} 
+                        className="mr-3"
+                        disabled={topping.status === 'indisponivel'}
+                    />
+                    {topping.name} {topping.status === 'indisponivel' && '(Indisponível)'}
                   </label>
                 ))}
               </div>
@@ -134,9 +186,21 @@ const ProductBuilder = () => {
             <>
               <h2 className="text-xl font-semibold text-primary mb-4">🍓 Frutas (até 2)</h2>
               <div className="space-y-3 mb-4">
-                  {menuOptions.fruits.map((fruit) => (
-                      <label key={fruit} className={`flex items-center p-3 border rounded-lg ${currentAcai.fruits.includes(fruit) ? 'border-primary bg-purple-50' : ''}`}>
-                          <input type="checkbox" checked={currentAcai.fruits.includes(fruit)} onChange={() => handleItemToggle('fruits', fruit)} className="mr-3"/>{fruit}
+                  {menuOptions.fruits.filter(item => item.status !== 'desativado').map((fruit) => (
+                      <label 
+                        key={fruit.name} 
+                        className={`flex items-center p-3 border rounded-lg 
+                            ${currentAcai.fruits.some(selectedFruit => selectedFruit.name === fruit.name) ? 'border-primary bg-purple-50' : ''} 
+                            ${fruit.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                          <input 
+                            type="checkbox" 
+                            checked={currentAcai.fruits.some(selectedFruit => selectedFruit.name === fruit.name)} 
+                            onChange={() => handleItemToggle('fruits', fruit)} 
+                            className="mr-3"
+                            disabled={fruit.status === 'indisponivel'}
+                          />
+                          {fruit.name} {fruit.status === 'indisponivel' && '(Indisponível)'}
                       </label>
                   ))}
               </div>
@@ -148,9 +212,22 @@ const ProductBuilder = () => {
               <h2 className="text-xl font-semibold text-primary mb-4">✨ Toques Finais</h2>
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-3">Cobertura</label>
-                {menuOptions.syrups.map((syrup) => (
-                    <label key={syrup} className={`flex items-center p-3 border rounded-lg mb-2 ${currentAcai.syrup === syrup ? 'border-primary bg-purple-50' : ''}`}>
-                        <input type="radio" name="syrup" checked={currentAcai.syrup === syrup} onChange={() => updateCurrentAcai({ ...currentAcai, syrup })} className="mr-3"/>{syrup}
+                {menuOptions.syrups.filter(item => item.status !== 'desativado').map((syrup) => (
+                    <label 
+                        key={syrup.name} 
+                        className={`flex items-center p-3 border rounded-lg mb-2 
+                            ${currentAcai.syrup?.name === syrup.name ? 'border-primary bg-purple-50' : ''} 
+                            ${syrup.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <input 
+                            type="radio" 
+                            name="syrup" 
+                            checked={currentAcai.syrup?.name === syrup.name} 
+                            onChange={() => updateCurrentAcai({ ...currentAcai, syrup })} 
+                            className="mr-3"
+                            disabled={syrup.status === 'indisponivel'}
+                        />
+                        {syrup.name} {syrup.status === 'indisponivel' && '(Indisponível)'}
                     </label>
                 ))}
               </div>

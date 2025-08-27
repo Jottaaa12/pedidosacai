@@ -42,6 +42,7 @@ const OrderSummary = () => {
       });
       showToast('Pedido salvo! Abrindo WhatsApp...');
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(generateSummary())}`, '_blank');
+      dispatch({ type: 'RESET_STATE' });
     } catch (error) {
       showToast('Erro ao salvar o pedido.');
     }

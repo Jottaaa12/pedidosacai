@@ -1,5 +1,4 @@
-// src/context/AppContext.js
-import React, { createContext, useReducer } from 'react';
+import React, { createContext, useReducer, useEffect } from 'react';
 import { useToast } from '../hooks/useToast';
 import Toast from '../components/ui/Toast';
 
@@ -13,6 +12,19 @@ const initialAcaiState = {
     fruits: [],
     syrup: 'Sem cobertura',
     notes: ''
+};
+
+const initialState = {
+    customerName: '',
+    customerPhone: '',
+    currentStep: 1,
+    currentView: 'form',
+    cart: [],
+    delivery: {},
+    payment: {},
+    currentAcai: initialAcaiState,
+    showCartModal: false,
+    showPixModal: false
 };
 
 const appReducer = (state, action) => {
@@ -39,6 +51,14 @@ const appReducer = (state, action) => {
         case 'HIDE_PIX_MODAL': return { ...state, showPixModal: false };
         case 'SHOW_ADMIN': return { ...state, currentView: 'admin' };
         case 'SHOW_FORM': return { ...state, currentView: 'form' };
+        // Ação para resetar o estado ao finalizar o pedido
+        case 'RESET_STATE':
+            return {
+                ...initialState,
+                // Mantém o nome e telefone para facilitar novos pedidos
+                customerName: state.customerName,
+                customerPhone: state.customerPhone,
+            };
         default: return state;
     }
 };
@@ -46,18 +66,32 @@ const appReducer = (state, action) => {
 const AppProvider = ({ children }) => {
     const { toast, showToast } = useToast();
 
-    const [state, dispatch] = useReducer(appReducer, {
-        customerName: '',
-        customerPhone: '',
-        currentStep: 1,
-        currentView: 'form',
-        cart: [],
-        delivery: {},
-        payment: {},
-        currentAcai: initialAcaiState,
-        showCartModal: false,
-        showPixModal: false
+    // Carrega o estado do localStorage na inicialização
+    const [state, dispatch] = useReducer(appReducer, initialState, (initial) => {
+        try {
+            const persisted = localStorage.getItem('acaiOrderState');
+            if (!persisted) return initial;
+            
+            const persistedState = JSON.parse(persisted);
+            // Garante que o estado de modais e o passo inicial estejam corretos
+            return {
+                ...persistedState,
+                currentStep: persistedState.currentStep > 1 ? persistedState.currentStep : 1,
+                showCartModal: false,
+                showPixModal: false,
+            };
+        } catch (error) {
+            console.error("Failed to parse state from localStorage", error);
+            return initial;
+        }
     });
+
+    // Salva o estado no localStorage a cada mudança
+    useEffect(() => {
+        // Não salva o estado de modais abertos
+        const stateToPersist = { ...state, showCartModal: false, showPixModal: false };
+        localStorage.setItem('acaiOrderState', JSON.stringify(stateToPersist));
+    }, [state]);
 
     return (
         <AppContext.Provider value={{ state, dispatch, showToast }}>
@@ -68,5 +102,3 @@ const AppProvider = ({ children }) => {
 };
 
 export { AppContext, AppProvider };
-
-// commit
