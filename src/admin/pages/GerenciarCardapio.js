@@ -1,17 +1,32 @@
 
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 
+// Dados iniciais para o cardápio, caso ele não exista no Firestore
+const initialMenuData = {
+    creams: ["Creme de maracujá", "Creme de morango", "Creme de ninho", "Creme de cupuaçu"],
+    fruits: ["Morango", "Kiwi", "Uva"],
+    toppings: [
+        "Leite em pó", "Castanha Caramelizada", "Granola", "Castanha",
+        "Gotas de Chocolate", "Paçoquita", "Amendoim", "Chocoball",
+        "Canudinho Biju", "Cereja", "Sucrilhos", "M&M", "Ovomaltine",
+        "Cookies Branco", "Cookies Preto", "Farinha de tapioca"
+    ],
+    syrups: ["Sem cobertura", "Morango", "Chocolate", "Maracujá"],
+    sizes: [
+        { label: "300g – R$ 15,00", price: 15.00 },
+        { label: "360g – R$ 18,00", price: 18.00 },
+        { label: "400g – R$ 20,00", price: 20.00 },
+        { label: "440g – R$ 22,00", price: 22.00 },
+        { label: "500g – R$ 25,00", price: 25.00 },
+        { label: "Outro valor", type: "custom" }
+    ]
+};
+
 const GerenciarCardapio = () => {
-    const [menu, setMenu] = useState({
-        creams: [],
-        fruits: [],
-        toppings: [],
-        syrups: [],
-        sizes: [],
-    });
+    const [menu, setMenu] = useState(null);
     const [newItem, setNewItem] = useState({
         creams: '',
         fruits: '',
@@ -29,11 +44,14 @@ const GerenciarCardapio = () => {
                 if (docSnap.exists()) {
                     setMenu(docSnap.data());
                 } else {
-                    console.log("No such document!");
-                    // Here you could initialize the document with default values if it doesn't exist
+                    // Documento não existe, então cria com os dados iniciais
+                    console.log("Documento 'cardapio/opcoes' não encontrado. Criando um novo...");
+                    await setDoc(menuRef, initialMenuData);
+                    setMenu(initialMenuData);
+                    console.log("Documento criado com sucesso!");
                 }
             } catch (error) {
-                console.error("Error fetching menu:", error);
+                console.error("Error fetching or creating menu:", error);
             } finally {
                 setLoading(false);
             }
@@ -141,8 +159,8 @@ const GerenciarCardapio = () => {
     );
 
 
-    if (loading) {
-        return <div className="p-8">Carregando cardápio...</div>;
+    if (loading || !menu) {
+        return <div className="p-8 text-center">Carregando cardápio...</div>;
     }
 
     return (
