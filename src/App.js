@@ -16,6 +16,7 @@ import OrderSummary from './components/OrderSummary';
 import AdminLayout from './admin/AdminLayout';
 import AdminDashboard from './admin/pages/AdminDashboard';
 import AdminLogin from './admin/pages/AdminLogin';
+import GerenciarCardapio from './admin/pages/GerenciarCardapio';
 
 // Importa componentes da UI
 import CartIndicator from './components/ui/CartIndicator';
@@ -112,6 +113,16 @@ export default function App() {
                     <PrivateRoute>
                         <AdminLayout>
                             <AdminDashboard />
+                        </AdminLayout>
+                    </PrivateRoute>
+                } 
+            />
+            <Route 
+                path="/admin/cardapio" 
+                element={
+                    <PrivateRoute>
+                        <AdminLayout>
+                            <GerenciarCardapio />
                         </AdminLayout>
                     </PrivateRoute>
                 } 

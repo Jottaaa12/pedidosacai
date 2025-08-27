@@ -38,7 +38,7 @@ const OrderSummary = () => {
         carrinho: state.cart,
         entrega: state.delivery,
         pagamento: state.payment,
-        status: "Recebido"
+        status: "Novo"
       });
       showToast('Pedido salvo! Abrindo WhatsApp...');
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(generateSummary())}`, '_blank');

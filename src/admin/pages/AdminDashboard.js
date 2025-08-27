@@ -1,21 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
 import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import OrderCard from '../components/OrderCard';
 import OrderDetailsModal from '../components/OrderDetailsModal';
 
+const columnConfig = {
+  'Novo': { title: 'Novos Pedidos', color: 'bg-blue-500' },
+  'Em Preparo': { title: 'Em Preparo', color: 'bg-yellow-500' },
+  'Saiu para Entrega': { title: 'Saiu para Entrega', color: 'bg-green-500' },
+  'Finalizado': { title: 'Finalizados', color: 'bg-gray-400' },
+  'Cancelado': { title: 'Cancelados', color: 'bg-red-500' },
+};
+
+const columnOrder = ['Novo', 'Em Preparo', 'Saiu para Entrega', 'Finalizado', 'Cancelado'];
+
 const AdminDashboard = () => {
-  const [allOrders, setAllOrders] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [columns, setColumns] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [filter, setFilter] = useState('today'); // 'today', 'week', 'all'
 
   useEffect(() => {
-    const q = query(collection(db, 'pedidos'), orderBy('timestamp', 'desc'));
+    // CORREÇÃO: Ordenando por 'dataDoPedido' em vez de 'timestamp'
+    const q = query(collection(db, 'pedidos'), orderBy('dataDoPedido', 'desc'));
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const ordersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllOrders(ordersData);
+      const allOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      // Inicializa as colunas com base na configuração
+      const newColumns = {};
+      columnOrder.forEach(status => {
+        newColumns[status] = {
+          ...columnConfig[status],
+          orders: [],
+        };
+      });
+
+      // Distribui os pedidos nas colunas corretas
+      allOrders.forEach(order => {
+        if (newColumns[order.status]) {
+          newColumns[order.status].orders.push(order);
+        }
+      });
+
+      setColumns(newColumns);
       setLoading(false);
     }, (error) => {
       console.error("Erro ao buscar pedidos: ", error);
@@ -25,101 +53,106 @@ const AdminDashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+  const onDragEnd = async (result) => {
+    const { destination, source, draggableId } = result;
 
-    const getFiltered = () => {
-      if (!allOrders) return [];
-      switch (filter) {
-        case 'today':
-          return allOrders.filter(order => order.timestamp && order.timestamp.toDate() >= today);
-        case 'week':
-          return allOrders.filter(order => order.timestamp && order.timestamp.toDate() >= weekAgo);
-        case 'all':
-        default:
-          return allOrders;
-      }
-    };
-    setFilteredOrders(getFiltered());
-  }, [allOrders, filter]);
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-  const handleUpdateStatus = async (orderId, newStatus) => {
-    const orderRef = doc(db, 'pedidos', orderId);
-    await updateDoc(orderRef, { status: newStatus });
-  };
+    const startColumn = columns[source.droppableId];
+    const endColumn = columns[destination.droppableId];
 
-  const handleCancelOrder = async (orderId) => {
-    if (window.confirm('Tem certeza que deseja cancelar este pedido?')) {
-        const orderRef = doc(db, 'pedidos', orderId);
-        await updateDoc(orderRef, { status: 'Cancelado' });
+    // Atualização otimista da UI
+    const startOrders = Array.from(startColumn.orders);
+    const [movedOrder] = startOrders.splice(source.index, 1);
+
+    const newColumns = { ...columns };
+
+    if (startColumn === endColumn) {
+      // Movendo dentro da mesma coluna
+      startOrders.splice(destination.index, 0, movedOrder);
+      newColumns[source.droppableId] = { ...startColumn, orders: startOrders };
+    } else {
+      // Movendo para uma coluna diferente
+      const endOrders = Array.from(endColumn.orders);
+      endOrders.splice(destination.index, 0, movedOrder);
+      newColumns[source.droppableId] = { ...startColumn, orders: startOrders };
+      newColumns[destination.droppableId] = { ...endColumn, orders: endOrders };
+      
+      // Atualiza o status no Firestore
+      const orderRef = doc(db, 'pedidos', draggableId);
+      await updateDoc(orderRef, { status: destination.droppableId });
     }
+
+    setColumns(newColumns);
   };
 
   const handleDeleteOrder = async (orderId) => {
     if (window.confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este pedido?')) {
-        await deleteDoc(doc(db, 'pedidos', orderId));
-        setSelectedOrder(null); // Fecha o modal
+      await deleteDoc(doc(db, 'pedidos', orderId));
+      setSelectedOrder(null); // Fecha o modal
     }
   };
 
-  const openDetailsModal = (order) => setSelectedOrder(order);
-  const closeDetailsModal = () => setSelectedOrder(null);
-
-  const renderOrderSection = (title, status) => {
-    const orders = filteredOrders.filter(order => order.status === status);
-    if (orders.length === 0) return null;
-
-    return (
-      <section>
-        <h2 className="text-2xl font-bold mb-4 text-gray-700 border-b-2 border-gray-200 pb-2">{title}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {orders.map(order => (
-            <OrderCard 
-              key={order.id} 
-              order={order}
-              onOpenDetails={openDetailsModal}
-              onUpdateStatus={handleUpdateStatus}
-              onCancelOrder={handleCancelOrder}
-            />
-          ))}
-        </div>
-      </section>
-    );
-  };
-
   if (loading) {
-    return <div className="text-center mt-8 text-xl">Carregando pedidos...</div>;
+    return <div className="flex justify-center items-center h-screen text-xl font-semibold">Carregando pedidos...</div>;
   }
 
   return (
-    <>
-      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold">Painel de Pedidos</h1>
-        <div>
-          <select onChange={(e) => setFilter(e.target.value)} value={filter} className="p-2 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-            <option value="today">Hoje</option>
-            <option value="week">Últimos 7 dias</option>
-            <option value="all">Todos</option>
-          </select>
+    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Painel de Pedidos</h1>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          {columnOrder.map(columnId => {
+            const column = columns[columnId];
+            if (!column) return null;
+
+            return (
+              <div key={columnId} className="bg-gray-100 rounded-lg flex flex-col">
+                <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color}`}>
+                  <h2 className="font-bold text-white">{column.title}</h2>
+                  <span className="text-sm font-semibold text-white bg-white/30 rounded-full px-2 py-0.5">
+                    {column.orders.length}
+                  </span>
+                </div>
+                <Droppable droppableId={columnId}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`p-3 pt-4 flex-grow transition-colors ${snapshot.isDraggingOver ? 'bg-gray-200' : ''}`}
+                    >
+                      {column.orders.length > 0 ? (
+                        column.orders.map((order, index) => (
+                          <OrderCard 
+                            key={order.id} 
+                            order={order} 
+                            index={index} 
+                            onOpenDetails={setSelectedOrder}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center text-sm text-gray-500 p-4">
+                          Nenhum pedido aqui.
+                        </div>
+                      )}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            );
+          })}
         </div>
-      </div>
-
-      <div className="space-y-10">
-        {renderOrderSection('Novos Pedidos', 'Novo')}
-        {renderOrderSection('Em Preparo', 'Em Preparo')}
-        {renderOrderSection('Saiu para Entrega', 'Saiu para Entrega')}
-        {renderOrderSection('Finalizados', 'Finalizado')}
-        {renderOrderSection('Cancelados', 'Cancelado')}
-      </div>
-
-      <OrderDetailsModal 
-        order={selectedOrder}
-        onClose={closeDetailsModal}
-        onDeleteOrder={handleDeleteOrder}
-      />
-    </>
+      </DragDropContext>
+      {selectedOrder && (
+        <OrderDetailsModal 
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onDeleteOrder={handleDeleteOrder}
+        />
+      )}
+    </div>
   );
 };
 

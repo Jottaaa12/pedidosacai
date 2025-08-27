@@ -1,10 +1,40 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
-import { SIZES, CREAMS, TOPPINGS, FRUITS, SYRUPS } from '../services/menu';
+import { db } from '../services/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const ProductBuilder = () => {
   const { state, dispatch, showToast } = useContext(AppContext);
   const { currentAcai } = state;
+  const [menuOptions, setMenuOptions] = useState({
+    sizes: [],
+    creams: [],
+    toppings: [],
+    fruits: [],
+    syrups: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const menuRef = doc(db, 'cardapio', 'opcoes');
+        const docSnap = await getDoc(menuRef);
+        if (docSnap.exists()) {
+          setMenuOptions(docSnap.data());
+        } else {
+          console.log("No menu data found in Firestore!");
+          // Optionally, set fallback data or show an error
+        }
+      } catch (error) {
+        console.error("Error fetching menu:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, []);
 
   const updateCurrentAcai = (updatedAcai) => {
     dispatch({ type: 'UPDATE_CURRENT_ACAI', payload: updatedAcai });
@@ -41,10 +71,14 @@ const ProductBuilder = () => {
   };
   
   const surpriseMe = () => {
-    const selected = [...TOPPINGS].sort(() => 0.5 - Math.random()).slice(0, 4);
+    const selected = [...menuOptions.toppings].sort(() => 0.5 - Math.random()).slice(0, 4);
     updateCurrentAcai({ ...currentAcai, toppings: selected });
     showToast('Combo surpresa selecionado! 🎲');
   };
+
+  if (loading) {
+    return <div className="p-6 text-center">Carregando opções do cardápio...</div>;
+  }
 
   const renderStep = () => {
     switch (state.currentStep) {
@@ -53,7 +87,7 @@ const ProductBuilder = () => {
           <>
             <h2 className="text-xl font-semibold text-primary mb-4">📦 Escolha o tamanho</h2>
             <div className="space-y-3 mb-6">
-              {SIZES.map((size, index) => (
+              {menuOptions.sizes.map((size, index) => (
                 <label key={index} className={`flex items-center p-3 border rounded-lg cursor-pointer ${currentAcai.size?.label === size.label ? 'border-primary bg-purple-50' : ''}`}>
                   <input type="radio" name="size" checked={currentAcai.size?.label === size.label} onChange={() => updateCurrentAcai({ ...currentAcai, size })} className="mr-3"/>{size.label}
                 </label>
@@ -69,7 +103,7 @@ const ProductBuilder = () => {
           <>
             <h2 className="text-xl font-semibold text-primary mb-4">🍦 Cremes (até 2)</h2>
             <div className="space-y-3 mb-6">
-              {CREAMS.map((cream) => (
+              {menuOptions.creams.map((cream) => (
                 <label key={cream} className={`flex items-center p-3 border rounded-lg cursor-pointer ${currentAcai.creams.includes(cream) ? 'border-primary bg-purple-50' : ''}`}>
                   <input type="checkbox" checked={currentAcai.creams.includes(cream)} onChange={() => handleItemToggle('creams', cream)} className="mr-3"/>{cream}
                 </label>
@@ -87,7 +121,7 @@ const ProductBuilder = () => {
               </div>
               <p className="text-center text-sm mb-4">{extraToppings > 0 ? `Adicionais: ${extraToppings} (R$ ${extraToppings.toFixed(2)})` : `Você tem ${4 - currentAcai.toppings.length} grátis.`}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
-                {TOPPINGS.map((topping) => (
+                {menuOptions.toppings.map((topping) => (
                   <label key={topping} className={`flex items-center p-3 border rounded-lg ${currentAcai.toppings.includes(topping) ? 'border-primary bg-purple-50' : ''}`}>
                     <input type="checkbox" checked={currentAcai.toppings.includes(topping)} onChange={() => handleItemToggle('toppings', topping)} className="mr-3"/>{topping}
                   </label>
@@ -100,7 +134,7 @@ const ProductBuilder = () => {
             <>
               <h2 className="text-xl font-semibold text-primary mb-4">🍓 Frutas (até 2)</h2>
               <div className="space-y-3 mb-4">
-                  {FRUITS.map((fruit) => (
+                  {menuOptions.fruits.map((fruit) => (
                       <label key={fruit} className={`flex items-center p-3 border rounded-lg ${currentAcai.fruits.includes(fruit) ? 'border-primary bg-purple-50' : ''}`}>
                           <input type="checkbox" checked={currentAcai.fruits.includes(fruit)} onChange={() => handleItemToggle('fruits', fruit)} className="mr-3"/>{fruit}
                       </label>
@@ -114,7 +148,7 @@ const ProductBuilder = () => {
               <h2 className="text-xl font-semibold text-primary mb-4">✨ Toques Finais</h2>
               <div className="mb-6">
                 <label className="block text-sm font-medium mb-3">Cobertura</label>
-                {SYRUPS.map((syrup) => (
+                {menuOptions.syrups.map((syrup) => (
                     <label key={syrup} className={`flex items-center p-3 border rounded-lg mb-2 ${currentAcai.syrup === syrup ? 'border-primary bg-purple-50' : ''}`}>
                         <input type="radio" name="syrup" checked={currentAcai.syrup === syrup} onChange={() => updateCurrentAcai({ ...currentAcai, syrup })} className="mr-3"/>{syrup}
                     </label>
