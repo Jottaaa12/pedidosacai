@@ -31,9 +31,12 @@ const OrderSummary = () => {
 
   const sendToWhatsApp = async () => {
     try {
+      // CORREÇÃO: Adicionado 'clienteTelefone' e garantido que 'clienteNome' está correto
+      // para coincidir com o que o painel de admin espera.
       await addDoc(collection(db, 'pedidos'), {
         clienteId: state.user?.uid || null,
         clienteNome: state.customerName,
+        clienteTelefone: state.customerPhone, // Adicionado este campo
         dataDoPedido: serverTimestamp(),
         carrinho: state.cart,
         entrega: state.delivery,

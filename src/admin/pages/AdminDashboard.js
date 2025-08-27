@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../services/firebase';
-import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+// MELHORIA: Adicionado 'where' para filtrar a busca de pedidos
+import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import OrderCard from '../components/OrderCard';
 import OrderDetailsModal from '../components/OrderDetailsModal';
@@ -21,25 +22,29 @@ const AdminDashboard = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'pedidos'), orderBy('dataDoPedido', 'desc'));
+    // MELHORIA: A consulta agora busca apenas pedidos que NÃO estão finalizados ou cancelados.
+    // Isso torna o painel muito mais rápido e eficiente à medida que o número de pedidos aumenta.
+    const q = query(
+        collection(db, 'pedidos'), 
+        where('status', 'not-in', ['Finalizado', 'Cancelado']),
+        orderBy('status'), // Ordenar por status pode ajudar na organização
+        orderBy('dataDoPedido', 'desc')
+    );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const allOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const activeOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // CÓDIGO CORRIGIDO: Usando 'reduce' para organizar os pedidos de forma mais eficiente
-      const newColumns = allOrders.reduce((acc, order) => {
-        // Garante que pedidos sem status ou com status inválido caiam na coluna 'Novo'
-        const status = order.status && columnConfig[order.status] ? order.status : 'Novo';
-        
-        // Adiciona o pedido à lista de pedidos da coluna correspondente
-        acc[status].orders.push(order);
-        return acc;
-      }, 
-      // Objeto inicial para o reduce, com todas as colunas já criadas e vazias
-      columnOrder.reduce((acc, status) => {
+      const newColumns = columnOrder.reduce((acc, status) => {
         acc[status] = { ...columnConfig[status], orders: [] };
         return acc;
-      }, {}));
+      }, {});
+
+      activeOrders.forEach(order => {
+        const status = order.status && columnConfig[order.status] ? order.status : 'Novo';
+        if (newColumns[status]) {
+            newColumns[status].orders.push(order);
+        }
+      });
 
       setColumns(newColumns);
       setLoading(false);
@@ -55,47 +60,52 @@ const AdminDashboard = () => {
     const { destination, source, draggableId } = result;
 
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
-        return;
+      return;
     }
 
+    // Guarda o estado original para o caso de erro
+    const originalColumns = { ...columns };
+
+    // Atualização otimista da UI
     const startColumn = columns[source.droppableId];
     const endColumn = columns[destination.droppableId];
     const startOrders = Array.from(startColumn.orders);
     const [movedOrder] = startOrders.splice(source.index, 1);
-
+    
     const newColumnsState = { ...columns };
 
-    // Se movendo na mesma coluna
     if (startColumn === endColumn) {
         startOrders.splice(destination.index, 0, movedOrder);
         newColumnsState[source.droppableId] = { ...startColumn, orders: startOrders };
     } else {
-        // Movendo para uma coluna diferente
         const endOrders = Array.from(endColumn.orders);
         endOrders.splice(destination.index, 0, movedOrder);
         newColumnsState[source.droppableId] = { ...startColumn, orders: startOrders };
         newColumnsState[destination.droppableId] = { ...endColumn, orders: endOrders };
-
-        // Atualiza o status do pedido no Firestore
-        try {
-            const orderRef = doc(db, 'pedidos', draggableId);
-            await updateDoc(orderRef, { status: destination.droppableId });
-        } catch (error) {
-            console.error("Erro ao atualizar o status do pedido:", error);
-            // Opcional: Reverter a UI em caso de erro
-        }
     }
+    setColumns(newColumnsState); // Aplica a mudança na tela imediatamente
 
-    setColumns(newColumnsState);
+    // Tenta atualizar no Firestore
+    try {
+        const orderRef = doc(db, 'pedidos', draggableId);
+        await updateDoc(orderRef, { status: destination.droppableId });
+    } catch (error) {
+        console.error("Erro ao atualizar o status do pedido:", error);
+        // CORREÇÃO: Se a atualização no banco de dados falhar,
+        // a tela é revertida para o estado original, evitando inconsistências.
+        alert("Não foi possível atualizar o pedido. Tente novamente.");
+        setColumns(originalColumns);
+    }
   };
 
   const handleDeleteOrder = async (orderId) => {
     if (window.confirm('Tem certeza que deseja EXCLUIR PERMANENTEMENTE este pedido?')) {
       try {
         await deleteDoc(doc(db, 'pedidos', orderId));
-        setSelectedOrder(null); // Fecha o modal após a exclusão
+        setSelectedOrder(null);
       } catch (error) {
-          console.error("Erro ao excluir o pedido:", error);
+        console.error("Erro ao excluir o pedido:", error);
+        alert("Erro ao excluir o pedido.");
       }
     }
   };

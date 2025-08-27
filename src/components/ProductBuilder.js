@@ -15,19 +15,16 @@ const ProductBuilder = () => {
     const unsubscribe = onSnapshot(menuRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Processa os dados para garantir que estão no formato de objeto com status
         const processedData = {};
         Object.keys(data).forEach(key => {
             if (Array.isArray(data[key])) {
-                // Se for um array de strings (formato antigo), converte para objetos
                 if (data[key].length > 0 && typeof data[key][0] === 'string') {
                     processedData[key] = data[key].map(item => ({ name: item, status: 'ativado' }));
                 } else {
-                    // Se já for array de objetos, garante que tem status ou adiciona 'ativado'
                     processedData[key] = data[key].map(item => 
                         (typeof item === 'object' && item !== null && item.name) 
                             ? { ...item, status: item.status || 'ativado' } 
-                            : { name: item, status: 'ativado' } // Caso algum item seja string solta
+                            : { name: item, status: 'ativado' }
                     );
                 }
             } else {
@@ -37,7 +34,6 @@ const ProductBuilder = () => {
         setMenuOptions(processedData);
       } else {
         console.log("No menu data found in Firestore!");
-        // O documento é criado no painel de admin, então aqui só precisamos aguardar.
         setMenuOptions({ sizes: [], creams: [], toppings: [], fruits: [], syrups: [] });
       }
       setLoading(false);
@@ -46,7 +42,6 @@ const ProductBuilder = () => {
       setLoading(false);
     });
 
-    // Cleanup: parar de ouvir quando o componente for desmontado
     return () => unsubscribe();
   }, []);
 
@@ -55,7 +50,6 @@ const ProductBuilder = () => {
   };
 
   const handleItemToggle = (category, item) => {
-    // Impede seleção de itens indisponíveis
     if (item.status === 'indisponivel') {
         showToast(`${item.name} está indisponível.`);
         return;
@@ -64,11 +58,9 @@ const ProductBuilder = () => {
     const maxLimits = { creams: 2, fruits: 2 };
     const currentList = currentAcai[category];
 
-    // Verifica se o item já está na lista (para remover)
     if (currentList.some(selectedItem => selectedItem.name === item.name)) {
       updateCurrentAcai({ ...currentAcai, [category]: currentList.filter(selectedItem => selectedItem.name !== item.name) });
     } else {
-      // Verifica limites para adicionar
       const limit = maxLimits[category];
       if (limit && currentList.length >= limit) {
         showToast(`Máximo ${limit} ${category === 'creams' ? 'cremes' : 'frutas'}`);
@@ -86,7 +78,6 @@ const ProductBuilder = () => {
       if (isNaN(customPrice) || customPrice < 26 || customPrice > 50) { showToast('Valor entre R$ 26 e R$ 50'); return; }
       finalAcai.size = { label: `Valor de R$ ${customPrice.toFixed(2)}`, price: customPrice };
     }
-    // Garante que os acompanhamentos no carrinho são objetos com name e status
     finalAcai.toppings = finalAcai.toppings.map(topping => 
         (typeof topping === 'object' && topping !== null && topping.name) ? topping : { name: topping, status: 'ativado' }
     );
@@ -97,7 +88,6 @@ const ProductBuilder = () => {
   };
   
   const surpriseMe = () => {
-    // Filtra apenas os acompanhamentos ativados para a surpresa
     const availableToppings = menuOptions.toppings.filter(item => item.status === 'ativado');
     const selected = [...availableToppings].sort(() => 0.5 - Math.random()).slice(0, 4);
     updateCurrentAcai({ ...currentAcai, toppings: selected });
@@ -115,9 +105,24 @@ const ProductBuilder = () => {
           <>
             <h2 className="text-xl font-semibold text-primary mb-4">📦 Escolha o tamanho</h2>
             <div className="space-y-3 mb-6">
-              {menuOptions.sizes.map((size, index) => (
-                <label key={index} className={`flex items-center p-3 border rounded-lg cursor-pointer ${currentAcai.size?.label === size.label ? 'border-primary bg-purple-50' : ''}`}>
-                  <input type="radio" name="size" checked={currentAcai.size?.label === size.label} onChange={() => updateCurrentAcai({ ...currentAcai, size })} className="mr-3"/>{size.label}
+              {/* CORREÇÃO: Adicionado filtro para não mostrar tamanhos 'desativado' e desabilitar os 'indisponivel' */}
+              {menuOptions.sizes.filter(item => item.status !== 'desativado').map((size, index) => (
+                <label 
+                    key={index} 
+                    className={`flex items-center p-3 border rounded-lg cursor-pointer 
+                        ${currentAcai.size?.label === size.label ? 'border-primary bg-purple-50' : ''}
+                        ${size.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`
+                    }
+                >
+                  <input 
+                    type="radio" 
+                    name="size" 
+                    checked={currentAcai.size?.label === size.label} 
+                    onChange={() => updateCurrentAcai({ ...currentAcai, size })} 
+                    className="mr-3"
+                    disabled={size.status === 'indisponivel'}
+                  />
+                  {size.label} {size.status === 'indisponivel' && '(Indisponível)'}
                 </label>
               ))}
             </div>
