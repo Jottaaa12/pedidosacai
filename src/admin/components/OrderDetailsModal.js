@@ -1,6 +1,6 @@
 import React from 'react';
 
-const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
+const OrderDetailsModal = ({ order, onClose, onDeleteOrder, onPrint }) => {
   if (!order) return null;
 
   // CORREÇÃO: Utilizando as propriedades corretas do objeto 'order'
@@ -19,7 +19,19 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Cliente</h3>
             {/* CORREÇÃO: Usando 'clienteNome' e 'clienteTelefone' */}
             <p><strong>Nome:</strong> {clienteNome}</p>
-            <p><strong>Telefone:</strong> {clienteTelefone || 'Não informado'}</p>
+            <p><strong>Telefone:</strong> 
+              <a 
+                href={`https://wa.me/${clienteTelefone.replace(/\D/g, '')}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline inline-flex items-center"
+              >
+                {clienteTelefone || 'Não informado'}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </p>
           </div>
           <div>
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Entrega</h3>
@@ -53,13 +65,21 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder }) => {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end space-x-4">
-          <button onClick={() => onDeleteOrder(order.id)} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-            Excluir Pedido
+        <div className="mt-6 flex justify-between items-center">
+          <button
+            onClick={onPrint}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Imprimir Comanda
           </button>
-          <button onClick={onClose} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-            Fechar
-          </button>
+          <div className="flex space-x-4">
+            <button onClick={() => onDeleteOrder(order.id)} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+              Excluir Pedido
+            </button>
+            <button onClick={onClose} className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+              Fechar
+            </button>
+          </div>
         </div>
       </div>
     </div>

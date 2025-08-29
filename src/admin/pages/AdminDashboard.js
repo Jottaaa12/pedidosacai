@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { ComandaParaImpressao } from '../components/ComandaParaImpressao';
 import { db } from '../../services/firebase';
 import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
@@ -27,6 +29,12 @@ const AdminDashboard = () => {
   const [columns, setColumns] = useState(generateInitialColumns());
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  const comandaRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => comandaRef.current,
+    documentTitle: `comanda-${selectedOrder?.id || 'pedido'}`,
+  });
 
   useEffect(() => {
     const q = query(
@@ -141,6 +149,7 @@ const AdminDashboard = () => {
                             order={order}
                             index={index}
                             onOpenDetails={setSelectedOrder}
+                            status={columnId} // Passa o status atual para o card
                           />
                         ))
                       ) : (
@@ -162,8 +171,12 @@ const AdminDashboard = () => {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onDeleteOrder={handleDeleteOrder}
+          onPrint={handlePrint}
         />
       )}
+      <div style={{ display: 'none' }}>
+        <ComandaParaImpressao ref={comandaRef} order={selectedOrder} />
+      </div>
     </div>
   );
 };
