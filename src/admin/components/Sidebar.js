@@ -1,26 +1,31 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { auth } from '../../services/firebase';
-import { FaClipboardList, FaBook } from 'react-icons/fa';
+import { FaClipboardList, FaBook, FaTimes } from 'react-icons/fa';
 
-const Sidebar = () => {
+const Sidebar = ({ toggleSidebar }) => { // Recebe a função para fechar
 
   const handleLogout = async () => {
     await auth.signOut();
-    // A navegação será tratada pelo listener de autenticação no App.js
   };
 
-  const linkClasses = "flex items-center px-4 py-2 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white";
+  const linkClasses = "flex items-center px-4 py-3 rounded-md text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200";
   const activeLinkClasses = "bg-gray-900 text-white";
 
   return (
-    <div className="w-64 bg-gray-800 text-white p-4 flex flex-col">
-      <h2 className="text-2xl font-bold mb-10 text-center">Sabor da Terra</h2>
+    <div className="w-64 bg-gray-800 text-white p-4 flex flex-col h-full">
+       <div className="flex justify-between items-center mb-10">
+        <h2 className="text-2xl font-bold text-center">Sabor da Terra</h2>
+        {/* Botão para fechar no modo mobile */}
+        <button onClick={toggleSidebar} className="lg:hidden text-gray-400 hover:text-white">
+          <FaTimes className="h-6 w-6" />
+        </button>
+      </div>
       <nav className="flex-grow">
         <ul>
           <li className="mb-4">
-            <NavLink 
-              to="/admin/dashboard" 
+            <NavLink
+              to="/admin/dashboard"
               className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
             >
               <FaClipboardList className="mr-3" />
@@ -28,8 +33,8 @@ const Sidebar = () => {
             </NavLink>
           </li>
           <li className="mb-4">
-            <NavLink 
-              to="/admin/cardapio" 
+            <NavLink
+              to="/admin/cardapio"
               className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
             >
               <FaBook className="mr-3" />
@@ -38,7 +43,7 @@ const Sidebar = () => {
           </li>
         </ul>
       </nav>
-      <button 
+      <button
         onClick={handleLogout}
         className="mt-auto w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
       >
@@ -49,4 +54,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

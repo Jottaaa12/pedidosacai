@@ -15,7 +15,6 @@ const columnConfig = {
 
 const columnOrder = ['Novo', 'Em Preparo', 'Saiu para Entrega', 'Finalizado', 'Cancelado'];
 
-// CORREÇÃO: Função para gerar o estado inicial das colunas
 const generateInitialColumns = () => {
     return columnOrder.reduce((acc, status) => {
         acc[status] = { ...columnConfig[status], orders: [] };
@@ -25,13 +24,11 @@ const generateInitialColumns = () => {
 
 
 const AdminDashboard = () => {
-  // CORREÇÃO: O estado é inicializado com a estrutura de colunas, não como nulo.
   const [columns, setColumns] = useState(generateInitialColumns());
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    // CORREÇÃO: Removido o filtro de status para incluir 'Finalizado' e 'Cancelado'
     const q = query(
         collection(db, 'pedidos'),
         orderBy('dataDoPedido', 'desc')
@@ -39,7 +36,7 @@ const AdminDashboard = () => {
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const allOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
+
       const newColumns = generateInitialColumns();
 
       allOrders.forEach(order => {
@@ -72,7 +69,7 @@ const AdminDashboard = () => {
     const endColumn = columns[destination.droppableId];
     const startOrders = Array.from(startColumn.orders);
     const [movedOrder] = startOrders.splice(source.index, 1);
-    
+
     const newColumnsState = { ...columns };
 
     if (startColumn === endColumn) {
@@ -113,16 +110,16 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Painel de Pedidos</h1>
+    <div className="p-0 md:p-4 lg:p-6 bg-gray-100 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800 hidden lg:block">Painel de Pedidos</h1>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div className="flex overflow-x-auto space-x-4 p-4 lg:grid lg:grid-cols-5 lg:gap-5 lg:space-x-0 lg:p-0">
           {columnOrder.map(columnId => {
             const column = columns[columnId];
             if (!column) return null;
 
             return (
-              <div key={columnId} className="bg-gray-100 rounded-lg flex flex-col max-h-[85vh]">
+              <div key={columnId} className="bg-gray-200 rounded-lg flex flex-col w-72 sm:w-80 flex-shrink-0 lg:w-auto">
                 <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color} sticky top-0 z-10`}>
                   <h2 className="font-bold text-white">{column.title}</h2>
                   <span className="text-sm font-semibold text-white bg-white/30 rounded-full px-2 py-0.5">
@@ -135,13 +132,14 @@ const AdminDashboard = () => {
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className={`p-3 pt-4 flex-grow transition-colors overflow-y-auto ${snapshot.isDraggingOver ? 'bg-blue-100' : ''}`}
+                      style={{ minHeight: '200px' }} // Garante uma área mínima para arrastar
                     >
                       {column.orders.length > 0 ? (
                         column.orders.map((order, index) => (
-                          <OrderCard 
-                            key={order.id} 
-                            order={order} 
-                            index={index} 
+                          <OrderCard
+                            key={order.id}
+                            order={order}
+                            index={index}
                             onOpenDetails={setSelectedOrder}
                           />
                         ))
@@ -160,7 +158,7 @@ const AdminDashboard = () => {
         </div>
       </DragDropContext>
       {selectedOrder && (
-        <OrderDetailsModal 
+        <OrderDetailsModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onDeleteOrder={handleDeleteOrder}
