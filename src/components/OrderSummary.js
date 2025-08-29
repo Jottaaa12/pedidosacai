@@ -38,16 +38,31 @@ const OrderSummary = () => {
 
   const sendToWhatsApp = async () => {
     try {
-      await addDoc(collection(db, 'pedidos'), {
+      const orderData = {
         clienteId: state.user?.uid || null,
         clienteNome: state.customerName,
-        clienteTelefone: state.customerPhone, // Campo adicionado para consistência
+        clienteTelefone: state.customerPhone,
         dataDoPedido: serverTimestamp(),
-        carrinho: state.cart,
-        entrega: state.delivery,
-        pagamento: state.payment,
+        carrinho: state.cart.map(item => ({
+          ...item,
+          notes: item.notes || null,
+        })),
+        entrega: {
+          college: state.delivery.college,
+          block: state.delivery.block || null,
+          room: state.delivery.room || null,
+          date: state.delivery.date || null,
+          time: state.delivery.time || null,
+        },
+        pagamento: {
+          method: state.payment.method,
+          finalTotal: state.payment.finalTotal,
+          cashChange: state.payment.cashChange || null,
+        },
         status: "Novo"
-      });
+      };
+
+      await addDoc(collection(db, 'pedidos'), orderData);
       showToast('Pedido salvo! Abrindo WhatsApp...');
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(generateSummary())}`, '_blank');
       dispatch({ type: 'RESET_STATE' });

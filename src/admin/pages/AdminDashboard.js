@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
-import { ComandaParaImpressao } from '../components/ComandaParaImpressao';
+import ComandaParaImpressao from '../components/ComandaParaImpressao';
 import { db } from '../../services/firebase';
 import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';

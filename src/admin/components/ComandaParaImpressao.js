@@ -1,7 +1,7 @@
 // Em: src/admin/components/ComandaParaImpressao.js
 import React from 'react';
 
-export const ComandaParaImpressao = React.forwardRef(({ order }, ref) => {
+const ComandaParaImpressao = React.forwardRef(({ order }, ref) => {
   if (!order) {
     return null;
   }
@@ -46,3 +46,5 @@ export const ComandaParaImpressao = React.forwardRef(({ order }, ref) => {
     </div>
   );
 });
+
+export default ComandaParaImpressao;
