@@ -174,7 +174,7 @@ const AdminDashboard = () => {
             onDeleteOrder={handleDeleteOrder}
             onPrint={handlePrint}
           />
-          <div style={{ display: 'none' }}>
+          <div style={{ position: 'absolute', top: 0, left: '-9999px', zIndex: -1 }}>
             <ComandaParaImpressao ref={comandaRef} order={selectedOrder} />
           </div>
         </>
