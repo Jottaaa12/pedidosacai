@@ -63,7 +63,7 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder, onPrint }) => {
 
         <div className="mt-6 flex justify-between items-center">
           <button
-            onClick={() => setTimeout(onPrint, 50)}
+            onClick={onPrint}
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
           >
             Imprimir Comanda
