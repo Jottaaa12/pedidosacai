@@ -1,3 +1,15 @@
+// Adiciona o código do país (55) a um número de telefone se necessário
+export const formatPhoneNumberForWhatsApp = (phoneString) => {
+  if (!phoneString) return '';
+  // Remove todos os caracteres não numéricos
+  let phoneNumber = phoneString.replace(/\D/g, '');
+  // Adiciona o código do país (55) se for um número brasileiro e ainda não o tiver
+  if (phoneNumber.length >= 10 && !phoneNumber.startsWith('55')) {
+    phoneNumber = '55' + phoneNumber;
+  }
+  return phoneNumber;
+};
+
 // Adaptação da função generateSummary de OrderSummary.js
 const generateOrderSummaryText = (order) => {
   const { clienteNome, clienteTelefone, carrinho, entrega, pagamento } = order;
@@ -63,7 +75,7 @@ const generateOrderSummaryText = (order) => {
 export const generateWhatsAppLink = (order, status) => {
   if (!order || !order.clienteTelefone) return null;
 
-  const phoneNumber = order.clienteTelefone.replace(/\D/g, '');
+  const phoneNumber = formatPhoneNumberForWhatsApp(order.clienteTelefone);
   let message = '';
 
   switch (status) {

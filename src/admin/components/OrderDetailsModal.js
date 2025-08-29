@@ -1,9 +1,9 @@
 import React from 'react';
+import { formatPhoneNumberForWhatsApp } from '../utils/whatsapp';
 
 const OrderDetailsModal = ({ order, onClose, onDeleteOrder, onPrint }) => {
   if (!order) return null;
 
-  // CORREÇÃO: Utilizando as propriedades corretas do objeto 'order'
   const { clienteNome, clienteTelefone, carrinho, entrega, pagamento } = order;
 
   return (
@@ -17,11 +17,10 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder, onPrint }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Cliente</h3>
-            {/* CORREÇÃO: Usando 'clienteNome' e 'clienteTelefone' */}
             <p><strong>Nome:</strong> {clienteNome}</p>
             <p><strong>Telefone:</strong> 
               <a 
-                href={`https://wa.me/${clienteTelefone.replace(/\D/g, '')}`} 
+                href={`https://wa.me/${formatPhoneNumberForWhatsApp(clienteTelefone)}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline inline-flex items-center"
@@ -35,21 +34,18 @@ const OrderDetailsModal = ({ order, onClose, onDeleteOrder, onPrint }) => {
           </div>
           <div>
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Entrega</h3>
-            {/* CORREÇÃO: Usando o objeto 'entrega' */}
             <p><strong>Local:</strong> {entrega.college}</p>
             <p><strong>Detalhes:</strong> {entrega.block} {entrega.room} {entrega.ufdparDetails} {entrega.otherDetails}</p>
             <p><strong>Horário:</strong> {entrega.time || new Date(entrega.date).toLocaleDateString('pt-BR')}</p>
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Pagamento</h3>
-            {/* CORREÇÃO: Usando o objeto 'pagamento' e tratando valor nulo */}
             <p><strong>Método:</strong> {pagamento?.method}</p>
             {pagamento?.cashChange && <p><strong>Troco para:</strong> R$ {pagamento.cashChange}</p>}
             <p className="font-bold text-xl mt-2">Total: R$ {pagamento?.finalTotal?.toFixed(2) || '0.00'}</p>
           </div>
           <div className="md:col-span-2">
             <h3 className="font-bold text-lg mb-2 border-b pb-1">Itens do Pedido</h3>
-            {/* CORREÇÃO: Usando o objeto 'carrinho' */}
             {carrinho.map((item, index) => (
               <div key={index} className="mb-4 p-2 border rounded">
                 <p className="font-semibold">{item.size.label}</p>

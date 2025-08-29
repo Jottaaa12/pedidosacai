@@ -167,16 +167,18 @@ const AdminDashboard = () => {
         </div>
       </DragDropContext>
       {selectedOrder && (
-        <OrderDetailsModal
-          order={selectedOrder}
-          onClose={() => setSelectedOrder(null)}
-          onDeleteOrder={handleDeleteOrder}
-          onPrint={handlePrint}
-        />
+        <>
+          <OrderDetailsModal
+            order={selectedOrder}
+            onClose={() => setSelectedOrder(null)}
+            onDeleteOrder={handleDeleteOrder}
+            onPrint={handlePrint}
+          />
+          <div style={{ display: 'none' }}>
+            <ComandaParaImpressao ref={comandaRef} order={selectedOrder} />
+          </div>
+        </>
       )}
-      <div style={{ display: 'none' }}>
-        <ComandaParaImpressao ref={comandaRef} order={selectedOrder} />
-      </div>
     </div>
   );
 };
