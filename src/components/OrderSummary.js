@@ -65,7 +65,7 @@ const OrderSummary = () => {
       await addDoc(collection(db, 'pedidos'), orderData);
       showToast('Pedido salvo! Abrindo WhatsApp...');
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(generateSummary())}`, '_blank');
-      dispatch({ type: 'RESET_STATE' });
+      dispatch({ type: 'SET_STEP', payload: 10 }); // Muda para a tela de "Obrigado"
     } catch (error) {
       showToast('Erro ao salvar o pedido.');
     }

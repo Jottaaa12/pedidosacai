@@ -11,6 +11,7 @@ import ProductBuilder from './components/ProductBuilder';
 import DeliveryForm from './components/DeliveryForm';
 import Payment from './components/Payment';
 import OrderSummary from './components/OrderSummary';
+import ThankYou from './components/ThankYou'; // Importa a nova tela
 
 // Importa os componentes do painel de administração
 import AdminLayout from './admin/AdminLayout';
@@ -40,6 +41,7 @@ const Store = () => {
             case 7: return <DeliveryForm />;
             case 8: return <Payment />;
             case 9: return <OrderSummary />;
+            case 10: return <ThankYou />;
             default: return <Authentication />;
         }
     };

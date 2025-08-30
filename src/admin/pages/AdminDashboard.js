@@ -6,6 +6,7 @@ import { collection, onSnapshot, orderBy, query, doc, updateDoc, deleteDoc } fro
 import { DragDropContext, Droppable } from 'react-beautiful-dnd';
 import OrderCard from '../components/OrderCard';
 import OrderDetailsModal from '../components/OrderDetailsModal';
+import MoveOrderMenu from '../components/MoveOrderMenu'; // Importa o novo componente
 
 const columnConfig = {
   'Novo': { title: 'Novos Pedidos', color: 'bg-blue-500' },
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
   const [columns, setColumns] = useState(generateInitialColumns());
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [movingOrder, setMovingOrder] = useState(null); // Estado para o menu de mover
   const [activeTab, setActiveTab] = useState(columnOrder[0]); // Para a visualização mobile
 
   const comandaRef = useRef();
@@ -114,6 +116,17 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleMoveOrder = async (orderId, newStatus) => {
+    const orderRef = doc(db, 'pedidos', orderId);
+    try {
+      await updateDoc(orderRef, { status: newStatus });
+      setMovingOrder(null); // Fecha o menu após a movimentação
+    } catch (error) {
+      console.error("Erro ao mover o pedido:", error);
+      alert("Não foi possível mover o pedido. Tente novamente.");
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-xl font-semibold">Carregando pedidos...</div>;
   }
@@ -169,6 +182,7 @@ const AdminDashboard = () => {
                             order={order}
                             index={index}
                             onOpenDetails={setSelectedOrder}
+                            onOpenMoveMenu={setMovingOrder} // Passa a função para abrir o menu
                             status={columnId}
                           />
                         ))
@@ -212,6 +226,7 @@ const AdminDashboard = () => {
                           order={order}
                           index={index}
                           onOpenDetails={setSelectedOrder}
+                          onOpenMoveMenu={setMovingOrder} // Passa a função também para a view de desktop
                           status={columnId}
                         />
                       ))}
@@ -236,6 +251,14 @@ const AdminDashboard = () => {
       <div style={{ position: 'absolute', top: 0, left: '-9999px', zIndex: -1 }}>
         {selectedOrder && <ComandaParaImpressao ref={comandaRef} order={selectedOrder} />}
       </div>
+
+      {/* Menu para Mover Pedido */}
+      <MoveOrderMenu 
+        order={movingOrder}
+        statuses={columnOrder}
+        onMove={handleMoveOrder}
+        onClose={() => setMovingOrder(null)}
+      />
     </div>
   );
 };

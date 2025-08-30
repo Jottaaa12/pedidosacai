@@ -29,7 +29,7 @@ const UserIcon = () => (
 );
 
 
-const OrderCard = ({ order, index, onOpenDetails, status }) => { // Recebe o status
+const OrderCard = ({ order, index, onOpenDetails, onOpenMoveMenu, status }) => { // Recebe as novas props
   const { clienteNome, pagamento, dataDoPedido, carrinho, entrega } = order;
 
   const formatTime = (timestamp) => {
@@ -110,6 +110,14 @@ const OrderCard = ({ order, index, onOpenDetails, status }) => { // Recebe o sta
                   className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded-md transition-colors"
                 >
                   Detalhes
+                </button>
+
+                {/* Botão para Mover no Mobile */}
+                <button 
+                  onClick={() => onOpenMoveMenu(order)}
+                  className="lg:hidden text-sm bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md transition-colors"
+                >
+                  Mover
                 </button>
               </div>
             </div>

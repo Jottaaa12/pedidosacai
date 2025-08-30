@@ -30,12 +30,14 @@ const Dashboard = () => {
         .filter(order => order.status !== 'Cancelado')
         .reduce((sum, order) => sum + (order.pagamento?.finalTotal || 0), 0);
 
+      // 3. Item Mais Pedido
       const itemCounts = {};
       todaysOrders
         .filter(order => order.status !== 'Cancelado')
         .forEach(order => {
           order.carrinho?.forEach(item => {
-            const itemName = item.nome || 'Item desconhecido';
+            // O 'item' aqui é um açaí completo. O nome principal é o tamanho.
+            const itemName = item.size?.label || item.size?.name || 'Item desconhecido';
             itemCounts[itemName] = (itemCounts[itemName] || 0) + 1;
           });
         });
