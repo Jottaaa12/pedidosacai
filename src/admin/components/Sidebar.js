@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { auth } from '../../services/firebase';
-import { FaClipboardList, FaBook, FaTimes } from 'react-icons/fa';
+import { FaClipboardList, FaBook, FaTimes, FaTachometerAlt } from 'react-icons/fa';
 
 const Sidebar = ({ toggleSidebar }) => { // Recebe a função para fechar
 
@@ -26,6 +26,15 @@ const Sidebar = ({ toggleSidebar }) => { // Recebe a função para fechar
           <li className="mb-4">
             <NavLink
               to="/admin/dashboard"
+              className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
+            >
+              <FaTachometerAlt className="mr-3" />
+              Dashboard
+            </NavLink>
+          </li>
+          <li className="mb-4">
+            <NavLink
+              to="/admin/pedidos"
               className={({ isActive }) => `${linkClasses} ${isActive ? activeLinkClasses : ''}`}
             >
               <FaClipboardList className="mr-3" />

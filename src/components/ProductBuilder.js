@@ -88,7 +88,7 @@ const ProductBuilder = () => {
     finalAcai.toppings = finalAcai.toppings.map(topping => 
         (typeof topping === 'object' && topping !== null && topping.name) ? topping : { name: topping, status: 'ativado' }
     );
-    finalAcai.additionalToppingCost = Math.max(0, finalAcai.toppings.length - 4) * 1.00;
+    finalAcai.additionalToppingCost = Math.max(0, finalAcai.toppings.length - 3) * 2.00;
     dispatch({ type: 'ADD_TO_CART', payload: finalAcai });
     dispatch({ type: 'SHOW_CART_MODAL' });
     dispatch({ type: 'RESET_CURRENT_ACAI' });
@@ -164,35 +164,66 @@ const ProductBuilder = () => {
           </>
         );
       case 4: // Toppings
-          const extraToppings = Math.max(0, currentAcai.toppings.length - 4);
-          return (
-            <>
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold text-primary">🥣 Acompanhamentos</h2>
-                <button onClick={surpriseMe} className="text-sm border border-secondary text-secondary px-3 py-1 rounded-full">✨ Surpreenda-me!</button>
-              </div>
-              <p className="text-center text-sm mb-4">{extraToppings > 0 ? `Adicionais: ${extraToppings} (R$ ${extraToppings.toFixed(2)})` : `Você tem ${4 - currentAcai.toppings.length} grátis.`}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
-                {menuOptions.toppings.filter(item => item.status !== 'desativado').map((topping) => (
-                  <label 
-                    key={topping.name} 
-                    className={`flex items-center p-3 border rounded-lg 
-                        ${currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name) ? 'border-primary bg-purple-50' : ''} 
-                        ${topping.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+        const FREE_TOPPINGS_LIMIT = 3;
+        const ADDITIONAL_TOPPING_COST = 2.00;
+        const selectedToppingsCount = currentAcai.toppings.length;
+        const extraToppings = Math.max(0, selectedToppingsCount - FREE_TOPPINGS_LIMIT);
+
+        return (
+          <>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-semibold text-primary">🥣 Acompanhamentos</h2>
+              <button onClick={surpriseMe} className="text-sm border border-secondary text-secondary px-3 py-1 rounded-full">✨ Surpreenda-me!</button>
+            </div>
+            
+            <p className="text-center text-sm text-gray-600 mb-4">Escolha seus 3 acompanhamentos grátis.</p>
+
+            {/* Visual Slots for Free Toppings */}
+            <div className="flex justify-center space-x-2 mb-4">
+              {Array.from({ length: FREE_TOPPINGS_LIMIT }).map((_, index) => {
+                const topping = currentAcai.toppings[index];
+                return (
+                  <div 
+                    key={index}
+                    className={`h-10 w-24 flex items-center justify-center text-xs text-center p-1 rounded-lg transition-all duration-300 
+                      ${topping ? 'bg-primary text-white font-semibold' : 'bg-gray-200 border-2 border-dashed'}`
+                    }
                   >
-                    <input 
-                        type="checkbox" 
-                        checked={currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name)} 
-                        onChange={() => handleItemToggle('toppings', topping)} 
-                        className="mr-3"
-                        disabled={topping.status === 'indisponivel'}
-                    />
-                    {topping.name} {topping.status === 'indisponivel' && '(Indisponível)'}
-                  </label>
-                ))}
+                    {topping ? topping.name : `Opção ${index + 1}`}
+                  </div>
+                );
+              })}
+            </div>
+
+            {extraToppings > 0 && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 rounded-md my-4 text-center">
+                <p className="font-bold">Atenção: Acompanhamentos Adicionais</p>
+                <p>Você selecionou {extraToppings} acompanhamento(s) extra(s).</p>
+                <p>Custo adicional: <strong>R$ {extraToppings * ADDITIONAL_TOPPING_COST},00</strong></p>
               </div>
-            </>
-          );
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-6">
+              {menuOptions.toppings.filter(item => item.status !== 'desativado').map((topping) => (
+                <label 
+                  key={topping.name} 
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-colors 
+                      ${currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name) ? 'border-primary bg-purple-50' : ''} 
+                      ${topping.status === 'indisponivel' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <input 
+                      type="checkbox" 
+                      checked={currentAcai.toppings.some(selectedTopping => selectedTopping.name === topping.name)} 
+                      onChange={() => handleItemToggle('toppings', topping)} 
+                      className="mr-3"
+                      disabled={topping.status === 'indisponivel'}
+                  />
+                  {topping.name} {topping.status === 'indisponivel' && '(Indisponível)'}
+                </label>
+              ))}
+            </div>
+          </>
+        );
       case 5: // Fruits
         return (
             <>
@@ -254,11 +285,11 @@ const ProductBuilder = () => {
     <div className="p-6">
       {renderStep()}
       <div className="flex gap-3 mt-6">
-        <button onClick={() => dispatch({ type: 'PREV_STEP' })} className="flex-1 py-3 border rounded-lg">Voltar</button>
+        <button onClick={() => dispatch({ type: 'PREV_STEP' })} className="flex-1 py-3 border rounded-lg transition-colors hover:bg-gray-100 hover:border-gray-400">Voltar</button>
         {state.currentStep < 6 ? (
-          <button onClick={() => dispatch({ type: 'NEXT_STEP' })} className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg">Próximo</button>
+          <button onClick={() => dispatch({ type: 'NEXT_STEP' })} className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-semibold transition-transform transform hover:scale-105 hover:brightness-110">Próximo</button>
         ) : (
-          <button onClick={addToCart} className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg">Adicionar ao Pedido</button>
+          <button onClick={addToCart} className="flex-1 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-semibold transition-transform transform hover:scale-105 hover:brightness-110">Adicionar ao Pedido</button>
         )}
       </div>
     </div>

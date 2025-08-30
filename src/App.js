@@ -14,7 +14,8 @@ import OrderSummary from './components/OrderSummary';
 
 // Importa os componentes do painel de administração
 import AdminLayout from './admin/AdminLayout';
-import AdminDashboard from './admin/pages/AdminDashboard';
+import Dashboard from './admin/pages/Dashboard'; // Novo Dashboard
+import AdminDashboard from './admin/pages/AdminDashboard'; // Renomeado para Pedidos
 import AdminLogin from './admin/pages/AdminLogin';
 import GerenciarCardapio from './admin/pages/GerenciarCardapio';
 
@@ -109,6 +110,16 @@ export default function App() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route 
                 path="/admin/dashboard" 
+                element={
+                    <PrivateRoute>
+                        <AdminLayout>
+                            <Dashboard />
+                        </AdminLayout>
+                    </PrivateRoute>
+                } 
+            />
+            <Route 
+                path="/admin/pedidos" 
                 element={
                     <PrivateRoute>
                         <AdminLayout>

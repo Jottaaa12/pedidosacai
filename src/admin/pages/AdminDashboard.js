@@ -29,6 +29,7 @@ const AdminDashboard = () => {
   const [columns, setColumns] = useState(generateInitialColumns());
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [activeTab, setActiveTab] = useState(columnOrder[0]); // Para a visualização mobile
 
   const comandaRef = useRef();
   const handlePrint = useReactToPrint({
@@ -117,31 +118,50 @@ const AdminDashboard = () => {
     return <div className="flex justify-center items-center h-screen text-xl font-semibold">Carregando pedidos...</div>;
   }
 
+  // Componente de Abas para Mobile
+  const MobileTabs = () => (
+    <div className="lg:hidden sticky top-0 z-20 bg-gray-100 p-2 overflow-x-auto">
+      <div className="flex space-x-2">
+        {columnOrder.map(columnId => (
+          <button
+            key={columnId}
+            onClick={() => setActiveTab(columnId)}
+            className={`px-4 py-2 text-sm font-semibold rounded-md whitespace-nowrap ${
+              activeTab === columnId
+                ? `${columnConfig[columnId].color} text-white shadow-md`
+                : 'bg-white text-gray-600'
+            }`}>
+            {columnConfig[columnId].title} ({columns[columnId].orders.length})
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-0 md:p-4 lg:p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800 hidden lg:block">Painel de Pedidos</h1>
+    <div className="bg-gray-100 min-h-screen flex flex-col">
+      <h1 className="text-3xl font-bold p-4 lg:p-6 lg:pb-4 text-gray-800 hidden lg:block">Painel de Pedidos</h1>
+      
+      <MobileTabs />
+
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex overflow-x-auto space-x-4 p-4 lg:grid lg:grid-cols-5 lg:gap-5 lg:space-x-0 lg:p-0">
+        {/* Visualização Mobile (Abas) */}
+        <div className="lg:hidden flex-grow p-2">
           {columnOrder.map(columnId => {
+            if (columnId !== activeTab) return null; // Mostra apenas a aba ativa
             const column = columns[columnId];
             if (!column) return null;
 
             return (
-              <div key={columnId} className="bg-gray-200 rounded-lg flex flex-col w-72 sm:w-80 flex-shrink-0 lg:w-auto">
-                <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color} sticky top-0 z-10`}>
-                  <h2 className="font-bold text-white">{column.title}</h2>
-                  <span className="text-sm font-semibold text-white bg-white/30 rounded-full px-2 py-0.5">
-                    {column.orders.length}
-                  </span>
-                </div>
+              <div key={columnId} className="h-full">
                 <Droppable droppableId={columnId}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
-                      className={`p-3 pt-4 flex-grow transition-colors overflow-y-auto ${snapshot.isDraggingOver ? 'bg-blue-100' : ''}`}
-                      style={{ minHeight: '200px' }} // Garante uma área mínima para arrastar
-                    >
+                      className={`p-2 rounded-lg flex-grow transition-colors overflow-y-auto h-full ${
+                        snapshot.isDraggingOver ? 'bg-blue-100' : 'bg-gray-200'
+                      }`}>
                       {column.orders.length > 0 ? (
                         column.orders.map((order, index) => (
                           <OrderCard
@@ -149,11 +169,11 @@ const AdminDashboard = () => {
                             order={order}
                             index={index}
                             onOpenDetails={setSelectedOrder}
-                            status={columnId} // Passa o status atual para o card
+                            status={columnId}
                           />
                         ))
                       ) : (
-                        <div className="text-center text-sm text-gray-500 p-4">
+                        <div className="text-center text-sm text-gray-500 p-8">
                           Nenhum pedido aqui.
                         </div>
                       )}
@@ -165,7 +185,46 @@ const AdminDashboard = () => {
             );
           })}
         </div>
+
+        {/* Visualização Desktop (Grid) */}
+        <div className="hidden lg:grid lg:grid-cols-5 lg:gap-5 p-6 pt-2 flex-grow">
+          {columnOrder.map(columnId => {
+            const column = columns[columnId];
+            if (!column) return null;
+
+            return (
+              <div key={columnId} className="bg-gray-200 rounded-lg flex flex-col h-full">
+                <div className={`p-3 rounded-t-lg flex justify-between items-center ${column.color} sticky top-0 z-10`}>
+                  <h2 className="font-bold text-white">{column.title}</h2>
+                  <span className="text-sm font-semibold text-white bg-white/30 rounded-full px-2 py-0.5">
+                    {column.orders.length}
+                  </span>
+                </div>
+                <Droppable droppableId={columnId}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`p-3 pt-4 flex-grow transition-colors overflow-y-auto ${snapshot.isDraggingOver ? 'bg-blue-100' : ''}`}>
+                      {column.orders.map((order, index) => (
+                        <OrderCard
+                          key={order.id}
+                          order={order}
+                          index={index}
+                          onOpenDetails={setSelectedOrder}
+                          status={columnId}
+                        />
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            );
+          })}
+        </div>
       </DragDropContext>
+
       {selectedOrder && (
         <OrderDetailsModal
           order={selectedOrder}

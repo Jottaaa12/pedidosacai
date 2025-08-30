@@ -53,6 +53,16 @@ const OrderCard = ({ order, index, onOpenDetails, status }) => { // Recebe o sta
     }
   };
 
+  const statusBorderColor = {
+    'Novo': 'border-blue-500',
+    'Em Preparo': 'border-yellow-500',
+    'Saiu para Entrega': 'border-green-500',
+    'Finalizado': 'border-gray-400',
+    'Cancelado': 'border-red-500',
+  };
+
+  const borderColor = statusBorderColor[status] || 'border-gray-200';
+
   return (
     <Draggable draggableId={order.id} index={index}>
       {(provided, snapshot) => (
@@ -60,9 +70,7 @@ const OrderCard = ({ order, index, onOpenDetails, status }) => { // Recebe o sta
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`bg-white rounded-lg shadow-md mb-4 border-l-4 ${
-            snapshot.isDragging ? 'shadow-lg border-purple-500' : 'border-gray-200'
-          }`}
+          className={`bg-white rounded-lg shadow-md mb-4 border-l-4 ${snapshot.isDragging ? 'shadow-lg border-purple-500' : borderColor}`}
         >
           <div className="p-4">
             <div className="flex items-center mb-3">
