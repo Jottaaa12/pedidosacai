@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth, db } from '../../services/firebase';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+// 1. CORREÇÃO AQUI (assumindo que 'services' está em 'src/services')
+import { auth, db } from '../services/firebase'; 
+// 2. CORREÇÃO AQUI (adicionado 'signOut')
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 
 const AdminLogin = () => {
@@ -64,14 +66,16 @@ const AdminLogin = () => {
         } else {
           console.log("Erro: O campo 'isAdmin' não é 'true'."); // LOG 8
           setError('Você não tem permissão para acessar esta área.');
-          await auth.signOut();
+          // 3. CORREÇÃO AQUI (mudança de auth.signOut() para signOut(auth))
+          await signOut(auth); 
           setLoading(false);
         }
       } else {
         console.log("Erro: Documento NÃO encontrado no Firestore."); // LOG 9
         console.log("Caminho procurado:", userDocRef.path);
         setError('Você não tem permissão para acessar esta área. (Doc não encontrado)');
-        await auth.signOut();
+        // 4. CORREÇÃO AQUI (mudança de auth.signOut() para signOut(auth))
+        await signOut(auth);
         setLoading(false);
       }
     } catch (err) {
