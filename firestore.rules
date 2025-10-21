@@ -1,0 +1,36 @@
+ rules_version = '2';
+ service cloud.firestore {
+   match /databases/{database}/documents {
+ 
+     // Função que verifica se o usuário logado é o admin
+     function isAdmin() {
+       return request.auth.token.phone_number == '+5588981905006';
+     }
+ 
+     // --- INÍCIO: REGRAS DO CARDÁPIO ---
+     // Permite que qualquer pessoa leia o cardápio, mas apenas o admin pode alterá-lo.
+     match /cardapio/opcoes {
+       allow read: if true;
+       allow write: if isAdmin();
+     }
+     // --- FIM: REGRAS DO CARDÁPIO ---
+
+     // Permite que cada usuário acesse seu próprio documento
+     match /users/{userId} {
+       allow read, write: if request.auth != null && request.auth.uid == userId;
+     }
+
+     // Regras para a coleção de pedidos
+     match /pedidos/{pedidoId} {
+       // Admin pode ler e escrever qualquer pedido
+       allow read, write: if isAdmin();
+
+       // Qualquer usuário logado pode criar um pedido
+  allow create: if request.auth != null;
+
+       // Clientes normais só podem ler os seus próprios pedidos
+       // (Esta regra é redundante se a de cima já dá acesso de leitura ao admin, mas não causaproblema)
+  allow read: if request.auth != null && request.auth.uid == resource.data.clienteId;
+     }
+   }
+ }

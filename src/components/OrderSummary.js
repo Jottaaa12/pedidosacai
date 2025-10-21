@@ -1,7 +1,5 @@
 import React, { useContext } from 'react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AppContext } from '../context/AppContext';
-import { db } from '../services/firebase';
 import { WHATSAPP_NUMBER } from '../services/menu';
 
 const OrderSummary = () => {
@@ -42,7 +40,6 @@ const OrderSummary = () => {
         clienteId: state.user?.uid || null,
         clienteNome: state.customerName,
         clienteTelefone: state.customerPhone,
-        dataDoPedido: serverTimestamp(),
         carrinho: state.cart.map(item => ({
           ...item,
           notes: item.notes || null,
@@ -62,12 +59,35 @@ const OrderSummary = () => {
         status: "Novo"
       };
 
-      await addDoc(collection(db, 'pedidos'), orderData);
+      const functionUrl = 'https://us-central1-acai-sabor-da-terra.cloudfunctions.net/salvarPedido'; // Placeholder URL
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao salvar o pedido na Cloud Function.');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Erro desconhecido ao salvar o pedido.');
+      }
+
       showToast('Pedido salvo! Abrindo WhatsApp...');
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(generateSummary())}`, '_blank');
       dispatch({ type: 'SET_STEP', payload: 10 }); // Muda para a tela de "Obrigado"
     } catch (error) {
-      showToast('Erro ao salvar o pedido.');
+      console.error("Erro ao enviar pedido:", error);
+      if (error.message.includes('Failed to fetch') || error.message.includes('ERR_BLOCKED_BY_CLIENT')) {
+        showToast('Erro: Seu navegador (AdBlock) pode estar bloqueando a comunicação. Tente desativá-lo ou usar outro navegador.');
+      } else {
+        showToast('Erro ao salvar o pedido: ' + error.message);
+      }
     }
   };
 
