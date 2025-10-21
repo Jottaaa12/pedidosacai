@@ -1,49 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { auth } from '../../services/firebase';
+import { useNavigate } from 'react-router-dom';
+// Importe o 'db' e as funções do firestore
+import { auth, db } from '../../services/firebase';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+// Importe getDoc e doc
+import { doc, getDoc } from 'firebase/firestore';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true); // Mantém o estado de carregamento inicial
+  const [loading, setLoading] = useState(false); // Loading do botão de login
+  const [authLoading, setAuthLoading] = useState(true); // Loading inicial da página
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    // Escuta mudanças no estado de autenticação
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Torna a função do listener assíncrona para usar await
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Se o usuário estiver logado E estiver na página de login, redireciona
-        if (location.pathname === '/admin/login') {
-          navigate('/admin/dashboard', { replace: true }); // Usar replace para evitar histórico confuso
-        } else {
-          // Se já estiver em outra página admin, apenas para de carregar
-          setAuthLoading(false);
+        // Usuário está logado, AGORA PRECISAMOS VERIFICAR SE É ADMIN
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && userDoc.data().isAdmin) {
+            // É ADMIN: Redirecionar para o dashboard
+            navigate('/admin/dashboard', { replace: true });
+          } else {
+            // NÃO É ADMIN (ou doc não existe):
+            // Apenas pare de carregar e mostre a página de login.
+            // Se ele estiver logado como cliente, ele verá o login de admin.
+            setAuthLoading(false);
+          }
+        } catch (err) {
+          console.error("Erro ao verificar permissão de admin:", err);
+          setError("Erro ao verificar permissão.");
+          setAuthLoading(false); // Pare de carregar em caso de erro
         }
       } else {
-        // Se não houver usuário, para de carregar (permanece na página de login)
+        // Ninguém logado, parar de carregar e mostrar formulário de login
         setAuthLoading(false);
       }
     });
 
-    // Limpa o listener ao desmontar o componente
     return () => unsubscribe();
-  // Adiciona location.pathname como dependência para reavaliar se a rota mudar
-  }, [navigate, location.pathname]);
+    // O navigate é estável e não precisa estar nas dependências
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true); // Inicia o loading do botão
+    setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // O redirecionamento será tratado pelo useEffect/onAuthStateChanged
-      // Não precisa parar o loading aqui, pois a página vai mudar
+      // 1. Tentar fazer o login
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. APÓS o login, verificar se é admin
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists() && userDoc.data().isAdmin) {
+        // É admin, o useEffect vai tratar o redirecionamento, 
+        // mas podemos forçar aqui para ser mais rápido.
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        // Logou, mas não é admin
+        setError('Você não tem permissão para acessar esta área.');
+        await auth.signOut(); // Deslogar o usuário não-admin imediatamente
+        setLoading(false);
+      }
     } catch (err) {
-      setLoading(false); // Para o loading do botão em caso de erro
+      // Erro no signInWithEmailAndPassword (email/senha errados)
+      setLoading(false);
       setError('Email ou senha inválidos.');
       console.error(err);
     }
@@ -65,46 +90,46 @@ const AdminLogin = () => {
         <h2 className="text-3xl font-bold text-center text-indigo-400">Admin Sabor da Terra</h2>
 
         <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-400">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="seu@email.com"
-                required // Adicionado required para validação básica
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-400">
-                Senha
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="••••••••"
-                required // Adicionado required para validação básica
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading} // Desabilita durante o processo de login
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 transition-colors"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-400">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="seu@email.com"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-400">
+              Senha
+            </label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 transition-colors"
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
+        </form>
 
         {error && <p className="text-red-400 text-center mt-4">{error}</p>}
       </div>
