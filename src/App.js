@@ -25,6 +25,7 @@ import CartIndicator from './components/ui/CartIndicator';
 import ProgressBar from './components/ui/ProgressBar';
 import PixModal from './components/ui/PixModal';
 import CartModal from './components/ui/CartModal';
+import CartListModal from './components/ui/CartListModal';
 
 // Componente para a loja principal
 const Store = () => {
@@ -48,7 +49,7 @@ const Store = () => {
 
     return (
         <>
-            <CartIndicator count={state.cart.length} />
+            <CartIndicator />
             <ProgressBar currentStep={state.currentStep} />
             
             <div className="relative">
@@ -64,6 +65,7 @@ const Store = () => {
 
             <PixModal />
             <CartModal />
+            <CartListModal />
         </>
     );
 };

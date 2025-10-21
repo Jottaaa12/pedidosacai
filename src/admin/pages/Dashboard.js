@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../services/firebase';
+import { db, rtdb } from '../../services/firebase';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { ref, onValue } from 'firebase/database';
+import { FaUsers } from 'react-icons/fa';
 
 const Dashboard = () => {
   const [dailyStats, setDailyStats] = useState({ totalOrders: 0, totalRevenue: 0, mostOrdered: '-' });
   const [dailyCustomers, setDailyCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState(0);
 
   useEffect(() => {
     const getStartOfDay = () => {
@@ -66,6 +69,16 @@ const Dashboard = () => {
       setLoading(false);
     });
 
+    // Listener para Usuários Online (RTDB)
+    const onlineUsersRef = ref(rtdb, 'onlineUsers');
+    const unsubscribeRTDB = onValue(onlineUsersRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setOnlineUsers(snapshot.numChildren());
+      } else {
+        setOnlineUsers(0);
+      }
+    });
+
     return () => unsubscribe();
   }, []);
 
@@ -74,7 +87,15 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Dashboard</h1>
       
       {/* Seção de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Card Usuários Online (NOVO) */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-lg font-semibold text-gray-600 mb-2">Usuários Online</h2>
+          <p className="text-3xl font-bold text-cyan-500 flex items-center">
+            <FaUsers className="mr-3" />
+            {loading ? '...' : onlineUsers}
+          </p>
+        </div>
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-600 mb-2">Total de Pedidos do Dia</h2>
           <p className="text-3xl font-bold text-blue-500">{loading ? '...' : dailyStats.totalOrders}</p>

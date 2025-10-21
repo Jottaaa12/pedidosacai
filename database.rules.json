@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "onlineUsers": {
+      // Permite que usuários autenticados (como o admin) leiam a lista para contagem.
+      ".read": "auth != null",
+      "$uid": {
+        // Permite que um usuário escreva apenas em seu próprio nó ($uid).
+        ".write": "auth != null && auth.uid === $uid",
+        // Ninguém precisa ler os dados internos de cada presença.
+        ".read": false
+      }
+    },
+    // Nega leitura/escrita em qualquer outro lugar do RTDB.
+    ".read": false,
+    ".write": false
+  }
+}

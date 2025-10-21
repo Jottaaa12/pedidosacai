@@ -1,6 +1,9 @@
 import React, { createContext, useReducer, useEffect } from 'react';
 import { useToast } from '../hooks/useToast';
 import Toast from '../components/ui/Toast';
+import { auth, rtdb } from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { ref, set, onDisconnect, serverTimestamp } from 'firebase/database';
 
 const AppContext = createContext();
 
@@ -24,7 +27,8 @@ const initialState = {
     payment: {},
     currentAcai: initialAcaiState,
     showCartModal: false,
-    showPixModal: false
+    showPixModal: false,
+    user: null
 };
 
 const appReducer = (state, action) => {
@@ -51,6 +55,7 @@ const appReducer = (state, action) => {
         case 'HIDE_PIX_MODAL': return { ...state, showPixModal: false };
         case 'SHOW_ADMIN': return { ...state, currentView: 'admin' };
         case 'SHOW_FORM': return { ...state, currentView: 'form' };
+        case 'SET_USER': return { ...state, user: action.payload };
         // Ação para resetar o estado ao finalizar o pedido
         case 'RESET_STATE':
             return {
@@ -58,6 +63,7 @@ const appReducer = (state, action) => {
                 // Mantém o nome e telefone para facilitar novos pedidos
                 customerName: state.customerName,
                 customerPhone: state.customerPhone,
+                user: state.user,
             };
         default: return state;
     }
@@ -89,9 +95,39 @@ const AppProvider = ({ children }) => {
     // Salva o estado no localStorage a cada mudança
     useEffect(() => {
         // Não salva o estado de modais abertos
-        const stateToPersist = { ...state, showCartModal: false, showPixModal: false };
+        const stateToPersist = { ...state, showCartModal: false, showPixModal: false, user: null };
         localStorage.setItem('acaiOrderState', JSON.stringify(stateToPersist));
     }, [state]);
+
+    // NOVO HOOK DE EFEITO PARA PRESENÇA
+    useEffect(() => {
+        // Ouve o estado de autenticação
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado (ou anônimo)
+                dispatch({ type: 'SET_USER', payload: user });
+
+                // Define a referência de presença no Realtime Database
+                const userStatusRef = ref(rtdb, 'onlineUsers/' + user.uid);
+
+                // Cria o registro quando online
+                set(userStatusRef, {
+                    online: true,
+                    lastSeen: serverTimestamp()
+                });
+
+                // Define o que fazer quando o usuário desconectar
+                onDisconnect(userStatusRef).remove();
+
+            } else {
+                // Usuário está deslogado
+                dispatch({ type: 'SET_USER', payload: null });
+            }
+        });
+
+        // Limpa o listener de autenticação ao desmontar
+        return () => unsubscribeAuth();
+    }, []); // O array vazio garante que isso rode apenas uma vez
 
     return (
         <AppContext.Provider value={{ state, dispatch, showToast }}>
