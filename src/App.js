@@ -1,9 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, AppContext } from './context/AppContext';
-import { auth } from './services/firebase';
+// Importe 'db', 'doc' e 'getDoc'
+import { auth, db } from './services/firebase'; 
 import { onAuthStateChanged } from 'firebase/auth';
-import { ADMIN_PHONE } from './services/menu';
+import { doc, getDoc } from 'firebase/firestore'; 
+// Remova ADMIN_PHONE, não vamos mais usar
+// import { ADMIN_PHONE } from './services/menu';
 
 // Importa os componentes principais da loja
 import Authentication from './components/Authentication';
@@ -70,16 +73,29 @@ const Store = () => {
     );
 };
 
-// Componente de Rota Privada para o Admin
+// Componente de Rota Privada para o Admin (MODIFICADO)
 const PrivateRoute = ({ children }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user && user.phoneNumber === ADMIN_PHONE) {
-                setIsAdmin(true);
+        // Torna a função assíncrona para checar o Firestore
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Se tem usuário, checar se ele é admin no Firestore
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists() && userDoc.data().isAdmin) {
+                        setIsAdmin(true);
+                    } else {
+                        setIsAdmin(false);
+                    }
+                } catch (error) {
+                    console.error("Erro ao verificar admin no PrivateRoute:", error);
+                    setIsAdmin(false);
+                }
             } else {
+                // Se não tem usuário, não é admin
                 setIsAdmin(false);
             }
             setLoading(false);
@@ -89,10 +105,15 @@ const PrivateRoute = ({ children }) => {
     }, []);
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen">Verificando autenticação...</div>; // Ou um spinner
+        return (
+            <div className="flex justify-center items-center h-screen bg-gray-900 text-white">
+                Verificando autenticação...
+            </div>
+        );
     }
 
-    return isAdmin ? children : <Navigate to="/admin/login" />;
+    // Se for admin, mostra o conteúdo (children), senão, navega para login
+    return isAdmin ? children : <Navigate to="/admin/login" replace />;
 };
 
 
@@ -142,7 +163,8 @@ export default function App() {
                     </PrivateRoute>
                 } 
             />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" />} />
+            {/* Redirecionamento padrão para admin */}
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         </Routes>
     </Router>
   );
