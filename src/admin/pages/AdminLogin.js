@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../services/firebase';
 import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 
@@ -10,18 +10,21 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        navigate('/admin/dashboard');
+        if (location.pathname === '/admin/login') {
+          navigate('/admin/dashboard');
+        }
       } else {
         setAuthLoading(false);
       }
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
