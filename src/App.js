@@ -22,6 +22,7 @@ import Dashboard from './admin/pages/Dashboard'; // Novo Dashboard
 import AdminDashboard from './admin/pages/AdminDashboard'; // Renomeado para Pedidos
 import AdminLogin from './admin/pages/AdminLogin';
 import GerenciarCardapio from './admin/pages/GerenciarCardapio';
+import TodosPedidos from './admin/pages/TodosPedidos'; // Importa a nova página
 
 // Importa componentes da UI
 import CartIndicator from './components/ui/CartIndicator';
@@ -162,6 +163,16 @@ export default function App() {
                         </AdminLayout>
                     </PrivateRoute>
                 } 
+            />
+            <Route 
+                path="/admin/todos-pedidos"
+                element={
+                    <PrivateRoute>
+                        <AdminLayout>
+                            <TodosPedidos />
+                        </AdminLayout>
+                    </PrivateRoute>
+                }
             />
             {/* Redirecionamento padrão para admin */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
