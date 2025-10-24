@@ -59,6 +59,10 @@ const AdminLogin = () => {
 
       // 2. APÓS o login, verificar se é admin
       const userDoc = await getDoc(doc(db, 'users', user.uid));
+
+      // DEBUG: Exibir os dados completos do documento
+      console.log('Dados do documento do Firestore:', userDoc.data());
+
       if (userDoc.exists() && userDoc.data().isAdmin) {
         // É admin, o useEffect vai tratar o redirecionamento, 
         // mas podemos forçar aqui para ser mais rápido.
