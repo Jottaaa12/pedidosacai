@@ -21,7 +21,7 @@ const AdminLogin = () => {
         // Usuário está logado, AGORA PRECISAMOS VERIFICAR SE É ADMIN
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists() && userDoc.data().isAdmin) {
+          if (userDoc.exists() && userDoc.data().IsAdmin) {
             // É ADMIN: Redirecionar para o dashboard
             navigate('/admin/dashboard', { replace: true });
           } else {
@@ -63,7 +63,7 @@ const AdminLogin = () => {
       // DEBUG: Exibir os dados completos do documento
       console.log('Dados do documento do Firestore:', userDoc.data());
 
-      if (userDoc.exists() && userDoc.data().isAdmin) {
+      if (userDoc.exists() && userDoc.data().IsAdmin) {
         // É admin, o useEffect vai tratar o redirecionamento, 
         // mas podemos forçar aqui para ser mais rápido.
         navigate('/admin/dashboard', { replace: true });
