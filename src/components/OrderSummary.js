@@ -1,9 +1,10 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 import { WHATSAPP_NUMBER } from '../services/menu';
 
 const OrderSummary = () => {
   const { state, dispatch, showToast } = useContext(AppContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generateSummary = () => {
     const { customerName, customerPhone, cart, delivery, payment } = state;
@@ -35,6 +36,9 @@ const OrderSummary = () => {
   };
 
   const sendToWhatsApp = async () => {
+    if (isSubmitting) return; // Previne múltiplos cliques
+    setIsSubmitting(true);
+
     try {
       const orderData = {
         clienteId: state.user?.uid || null,
@@ -56,10 +60,11 @@ const OrderSummary = () => {
           finalTotal: state.payment.finalTotal,
           cashChange: state.payment.cashChange || null,
         },
-        status: "Novo"
+        status: "Novo",
+        dataDoPedido: new Date(), // Adiciona a data atual ao pedido
       };
 
-      const functionUrl = 'https://us-central1-acai-sabor-da-terra.cloudfunctions.net/salvarPedido'; // Placeholder URL
+      const functionUrl = 'https://us-central1-acai-sabor-da-terra.cloudfunctions.net/salvarPedido';
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
@@ -88,6 +93,8 @@ const OrderSummary = () => {
       } else {
         showToast('Erro ao salvar o pedido: ' + error.message);
       }
+    } finally {
+      setIsSubmitting(false); // Re-habilita o botão no final
     }
   };
 
@@ -97,7 +104,13 @@ const OrderSummary = () => {
       <div className="bg-purple-50 p-4 rounded-lg mb-6 whitespace-pre-wrap font-mono text-sm">{generateSummary()}</div>
       <div className="flex gap-3">
         <button onClick={() => dispatch({ type: 'PREV_STEP' })} className="flex-1 py-3 border rounded-lg">Corrigir</button>
-        <button onClick={sendToWhatsApp} className="flex-2 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg">Enviar Pedido</button>
+        <button 
+          onClick={sendToWhatsApp} 
+          disabled={isSubmitting}
+          className="flex-2 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? 'Enviando Pedido...' : 'Enviar Pedido'}
+        </button>
       </div>
     </div>
   );
