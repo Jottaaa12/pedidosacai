@@ -87,10 +87,10 @@ const TodosPedidos = () => {
                     {pedido.dataDoPedido.toLocaleString('pt-BR')}
                   </td>
                   <td className="py-4 px-6 text-left">
-                    {pedido.clienteInfo?.nome || 'Não informado'}
+                    {pedido.clienteNome || 'Não informado'}
                   </td>
                   <td className="py-4 px-6 text-center font-semibold">
-                    R$ {(typeof pedido.total === 'number' ? pedido.total.toFixed(2) : '0.00').replace('.', ',')}
+                    R$ {(typeof pedido.pagamento?.finalTotal === 'number' ? pedido.pagamento.finalTotal.toFixed(2) : '0.00').replace('.', ',')}
                   </td>
                   <td className="py-4 px-6 text-center">
                     <select 

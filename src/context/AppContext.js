@@ -28,6 +28,7 @@ const initialState = {
     currentAcai: initialAcaiState,
     showCartModal: false,
     showPixModal: false,
+    isCartListOpen: false, // Estado para o novo modal
     user: null
 };
 
@@ -41,6 +42,11 @@ const appReducer = (state, action) => {
                 currentStep: 2
             };
         case 'ADD_TO_CART': return { ...state, cart: [...state.cart, action.payload] };
+        case 'REMOVE_FROM_CART':
+            return {
+                ...state,
+                cart: state.cart.filter((_, index) => index !== action.payload)
+            };
         case 'UPDATE_CURRENT_ACAI': return { ...state, currentAcai: action.payload };
         case 'RESET_CURRENT_ACAI': return { ...state, currentAcai: initialAcaiState };
         case 'REPEAT_ORDER': return { ...state, cart: action.payload };
@@ -51,6 +57,8 @@ const appReducer = (state, action) => {
         case 'SET_STEP': return { ...state, currentStep: action.payload };
         case 'SHOW_CART_MODAL': return { ...state, showCartModal: true };
         case 'HIDE_CART_MODAL': return { ...state, showCartModal: false };
+        case 'SHOW_CART_LIST': return { ...state, isCartListOpen: true };
+        case 'HIDE_CART_LIST': return { ...state, isCartListOpen: false };
         case 'SHOW_PIX_MODAL': return { ...state, showPixModal: true };
         case 'HIDE_PIX_MODAL': return { ...state, showPixModal: false };
         case 'SHOW_ADMIN': return { ...state, currentView: 'admin' };

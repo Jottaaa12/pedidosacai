@@ -73,7 +73,9 @@ const Dashboard = () => {
     const onlineUsersRef = ref(rtdb, 'onlineUsers');
     const unsubscribeRTDB = onValue(onlineUsersRef, (snapshot) => {
       if (snapshot.exists()) {
-        setOnlineUsers(snapshot.numChildren());
+        // Alternativa mais robusta para contar os filhos
+        const data = snapshot.val();
+        setOnlineUsers(Object.keys(data).length);
       } else {
         setOnlineUsers(0);
       }
