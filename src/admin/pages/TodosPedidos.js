@@ -16,12 +16,19 @@ const TodosPedidos = () => {
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const allOrders = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Garante que a data seja um objeto Date para formatação
-        dataDoPedido: doc.data().dataDoPedido.toDate(),
-      }));
+      const allOrders = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        // Fallback para data: se não existir ou não for um timestamp, usa a data atual.
+        const orderDate = (data.dataDoPedido && typeof data.dataDoPedido.toDate === 'function')
+          ? data.dataDoPedido.toDate()
+          : new Date(); 
+
+        return {
+          id: doc.id,
+          ...data,
+          dataDoPedido: orderDate,
+        };
+      });
       setPedidos(allOrders);
       setLoading(false);
     }, (error) => {
