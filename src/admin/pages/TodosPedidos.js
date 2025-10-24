@@ -90,7 +90,7 @@ const TodosPedidos = () => {
                     {pedido.clienteInfo?.nome || 'Não informado'}
                   </td>
                   <td className="py-4 px-6 text-center font-semibold">
-                    R$ {pedido.total.toFixed(2).replace('.', ',')}
+                    R$ {(typeof pedido.total === 'number' ? pedido.total.toFixed(2) : '0.00').replace('.', ',')}
                   </td>
                   <td className="py-4 px-6 text-center">
                     <select 

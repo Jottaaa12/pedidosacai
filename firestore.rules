@@ -3,10 +3,10 @@
    match /databases/{database}/documents {
  
      // Função que verifica se o usuário logado é o admin
-     function isAdmin() {
-       return request.auth.token.phone_number == '+5588981905006';
-     }
- 
+         function isAdmin() {
+           // Verifica se o documento do usuário que fez a requisição possui a flag IsAdmin
+           return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.IsAdmin == true;
+         } 
      // --- INÍCIO: REGRAS DO CARDÁPIO ---
      // Permite que qualquer pessoa leia o cardápio, mas apenas o admin pode alterá-lo.
      match /cardapio/opcoes {
