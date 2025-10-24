@@ -85,7 +85,7 @@ const PrivateRoute = ({ children }) => {
                 // Se tem usuário, checar se ele é admin no Firestore
                 try {
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    if (userDoc.exists() && userDoc.data().isAdmin) {
+                    if (userDoc.exists() && userDoc.data().IsAdmin) {
                         setIsAdmin(true);
                     } else {
                         setIsAdmin(false);
